@@ -26,26 +26,36 @@ class NNuttyViewer(glut_viewer.Viewer):
 
     """
 
-    def __init__(
-        self,
-        play_speed=1.0,
-        scale=1.0,
-        thickness=1.0,
-        render_overlay=False,
-        hide_origin=False,
-        **kwargs,
-    ):
+    def __init__(self, args):
+        self.play_speed = args.speed
+        self.scale = args.scale
+        self.thickness = args.thickness
+        self.render_overlay = args.render_overlay
+        self.hide_origin = args.hide_origin
+
         self.characters = []
         self.recording = False
-        self.play_speed = play_speed
-        self.render_overlay = render_overlay
-        self.hide_origin = hide_origin
         self.file_idx = 0
         self.cur_time = 0.0
-        self.scale = scale
-        self.thickness = thickness
         self.mutex_characters = Lock()
-        super().__init__(**kwargs)
+        self.v_up = utils.str_to_axis(args.axis_up)
+        self.cam = camera.Camera(
+            pos=np.array(args.camera_position),
+            origin=np.array(args.camera_origin),
+            vup=self.v_up,
+            fov=45.0,
+        )
+        super().__init__(title="NeuroNutty Viewer",
+                         size=(1280, 720))
+        
+    def run(self, **kwargs):
+        import pydevd;
+        pydevd.settrace(suspend=False)
+        glut_viewer.Viewer.run(self, **kwargs)
+
+    def destroy(self):
+        glutDestroyWindow(self.window)
+        sys.exit()
 
     def keyboard_callback(self, key):
         if key == b"s":
@@ -167,27 +177,5 @@ class NNuttyViewer(glut_viewer.Viewer):
     def add_nn_character(self, model, args):
         with self.mutex_characters:
             self.characters.append(Character(NNController(model, args=args)))
-
-def main(args):
-    v_up_env = utils.str_to_axis(args.axis_up)
-
-    cam = camera.Camera(
-        pos=np.array(args.camera_position),
-        origin=np.array(args.camera_origin),
-        vup=v_up_env,
-        fov=45.0,
-    )
-    viewer = NNuttyViewer(
-        play_speed=args.speed,
-        scale=args.scale,
-        thickness=args.thickness,
-        render_overlay=args.render_overlay or True,
-        hide_origin=args.hide_origin,
-        title="NeuroNutty Viewer",
-        cam=cam,
-        size=(1280, 720),
-    )
-    args.scale = 0.05
-    args.thickness = 5.0
-    viewer.add_bvh_character("C:/repo/mocap/accad_motion_lab/Female1_bvh/Female1_A03_SwingT2.bvh", args)
-    viewer.run()
+        
+        
