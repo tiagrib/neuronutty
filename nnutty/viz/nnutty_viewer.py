@@ -13,6 +13,10 @@ from fairmotion.utils import utils
 from PIL import Image
 import numpy as np
 
+from nnutty.controllers.anim_file_controller import BVHFileController
+from nnutty.controllers.nn_controller import NNController
+from nnutty.controllers.character import BodyModel, Character
+
 
 class NNuttyViewer(glut_viewer.Viewer):
     """
@@ -155,6 +159,15 @@ class NNuttyViewer(glut_viewer.Viewer):
                 image.convert("P", palette=Image.ADAPTIVE)
             )
 
+    def add_bvh_character(self, filename, args):
+        with self.mutex_characters:
+            self.characters.append(Character(body_model=BodyModel("stick_figure2"),
+                                             controller=BVHFileController(filename, args=args)))
+
+    def add_nn_character(self, model, args):
+        with self.mutex_characters:
+            self.characters.append(Character(NNController(model, args=args)))
+
 def main(args):
     v_up_env = utils.str_to_axis(args.axis_up)
 
@@ -174,4 +187,7 @@ def main(args):
         cam=cam,
         size=(1280, 720),
     )
+    args.scale = 0.05
+    args.thickness = 5.0
+    viewer.add_bvh_character("C:/repo/mocap/accad_motion_lab/Female1_bvh/Female1_A03_SwingT2.bvh", args)
     viewer.run()
