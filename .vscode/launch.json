@@ -17,7 +17,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/__main__.py",
             "console": "integratedTerminal",
-            "args": ["--axis-up", "y"]
+            "args": [ ]
         }
     ]
 }

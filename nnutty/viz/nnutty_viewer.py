@@ -7,7 +7,7 @@ from OpenGL.GLU import *
 from OpenGL.GLUT import *
 
 from fairmotion.viz import camera, gl_render, glut_viewer
-from fairmotion.ops import conversions
+from fairmotion.ops import conversions, math
 from fairmotion.utils import utils
 
 from PIL import Image
