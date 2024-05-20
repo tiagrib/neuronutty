@@ -1,9 +1,14 @@
 import sys
 import argparse
+from threading import Lock
+
 from PySide6 import QtWidgets, QtCore
 
 from nnutty.gui.nnutty_win import NNuttyWin
 from nnutty.viz.nnutty_viewer import NNuttyViewer
+from nnutty.controllers.character import BodyModel, Character
+from nnutty.controllers.anim_file_controller import BVHFileController
+from nnutty.controllers.nn_controller import NNController
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Visualize BVH file with block body")
@@ -57,12 +62,33 @@ class NNutty:
         self.app = QtWidgets.QApplication(sys.argv)
         self.threadpool = QtCore.QThreadPool()
         print("Multithreading with maximum %d threads" % self.threadpool.maxThreadCount())
-        self.win = NNuttyWin(args=self.args)
+        self.win = NNuttyWin(self)
 
         self.args.scale = 0.05
         self.args.thickness = 5.0
-        self.viewer = NNuttyViewer(args=self.args)
-        self.viewer.add_bvh_character("C:/repo/mocap/accad_motion_lab/Female1_bvh/Female1_A03_SwingT2.bvh", self.args)
+        self.viewer = NNuttyViewer(self)
+
+        self.mutex_characters = Lock()
+        self.characters = []
+
+    def add_bvh_character(self):
+        with self.mutex_characters:
+            self.characters.clear()
+            filename = "C:/repo/mocap/accad_motion_lab/Female1_bvh/Female1_A03_SwingT2.bvh"
+            self.characters.append(Character(body_model=BodyModel("stick_figure2"),
+                                             controller=BVHFileController(filename, args=self.args)))
+
+    def add_nn_character(self, model):
+        with self.mutex_characters:
+            self.characters.clear()
+            self.characters.append(Character(body_model=None,
+                                             controller=NNController(model, args=self.args)))
+
+    def get_characters(self):
+        char_enum = None
+        with self.mutex_characters:
+            char_enum = enumerate(self.characters)
+        return char_enum
 
     def run(self):
         self.win.show()

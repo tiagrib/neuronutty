@@ -1,6 +1,6 @@
-from threading import Lock
 import math
 import os
+import time
 
 from OpenGL.GL import *
 from OpenGL.GLU import *
@@ -10,13 +10,10 @@ from fairmotion.viz import camera, gl_render, glut_viewer
 from fairmotion.ops import conversions, math
 from fairmotion.utils import utils
 
+
+
 from PIL import Image
 import numpy as np
-
-from nnutty.controllers.anim_file_controller import BVHFileController
-from nnutty.controllers.nn_controller import NNController
-from nnutty.controllers.character import BodyModel, Character
-
 
 class NNuttyViewer(glut_viewer.Viewer):
     """
@@ -26,22 +23,21 @@ class NNuttyViewer(glut_viewer.Viewer):
 
     """
 
-    def __init__(self, args):
-        self.play_speed = args.speed
-        self.scale = args.scale
-        self.thickness = args.thickness
-        self.render_overlay = args.render_overlay
-        self.hide_origin = args.hide_origin
+    def __init__(self, nnutty):
+        self.nnutty = nnutty
+        self.play_speed = self.nnutty.args.speed
+        self.scale = self.nnutty.args.scale
+        self.thickness = self.nnutty.args.thickness
+        self.render_overlay = self.nnutty.args.render_overlay
+        self.hide_origin = self.nnutty.args.hide_origin
 
-        self.characters = []
         self.recording = False
         self.file_idx = 0
         self.cur_time = 0.0
-        self.mutex_characters = Lock()
-        self.v_up = utils.str_to_axis(args.axis_up)
+        self.v_up = utils.str_to_axis(self.nnutty.args.axis_up)
         self.cam = camera.Camera(
-            pos=np.array(args.camera_position),
-            origin=np.array(args.camera_origin),
+            pos=np.array(self.nnutty.args.camera_position),
+            origin=np.array(self.nnutty.args.camera_origin),
             vup=self.v_up,
             fov=45.0,
         )
@@ -115,20 +111,22 @@ class NNuttyViewer(glut_viewer.Viewer):
                     slice=8,
                 )
 
-    def _render_characters(self, colors):
-        char_enum = None
-        with self.mutex_characters:
-            char_enum = enumerate(self.characters)
-
-        for i, character in char_enum:
+    def _render_characters(self):
+        colors = [
+            np.array([123, 174, 85, 255]) / 255.0,  # green
+            np.array([255, 255, 0, 255]) / 255.0,  # yellow
+            np.array([85, 160, 173, 255]) / 255.0,  # blue
+        ]
+        for i, character in self.nnutty.get_characters():
             pose = character.get_pose()
-            color = colors[i % len(colors)]
+            if pose:
+                color = colors[i % len(colors)]
 
-            glEnable(GL_LIGHTING)
-            glEnable(GL_DEPTH_TEST)
+                glEnable(GL_LIGHTING)
+                glEnable(GL_DEPTH_TEST)
 
-            glEnable(GL_LIGHTING)
-            self._render_pose(pose, character.body_model.name, color)
+                glEnable(GL_LIGHTING)
+                self._render_pose(pose, character.body_model.name, color)
 
     def render_callback(self):
         gl_render.render_ground(
@@ -138,26 +136,22 @@ class NNuttyViewer(glut_viewer.Viewer):
             origin=not self.hide_origin,
             use_arrow=True,
         )
-        colors = [
-            np.array([123, 174, 85, 255]) / 255.0,  # green
-            np.array([255, 255, 0, 255]) / 255.0,  # yellow
-            np.array([85, 160, 173, 255]) / 255.0,  # blue
-        ]
-        self._render_characters(colors)
+        self._render_characters()
         self.record_callback()
 
     def idle_callback(self):
-        time_elapsed = self.time_checker.get_time(restart=False)
-        self.cur_time += self.play_speed * time_elapsed
+        self.dt = self.time_checker.get_time(restart=False)
+        self.cur_time += self.dt
         self.time_checker.begin()
+
+        for i, character in self.nnutty.get_characters():
+            character.advance_time(self.dt)
 
     def overlay_callback(self):
         if self.render_overlay:
             w, h = self.window_size
-            t = self.cur_time
-            frame = 0
             gl_render.render_text(
-                f"Frame number: {frame}",
+                f"Time: {self.cur_time:.2}",
                 pos=[0.05 * w, 0.95 * h],
                 font=GLUT_BITMAP_TIMES_ROMAN_24,
             )
@@ -168,14 +162,5 @@ class NNuttyViewer(glut_viewer.Viewer):
             self.rec_gif_images.append(
                 image.convert("P", palette=Image.ADAPTIVE)
             )
-
-    def add_bvh_character(self, filename, args):
-        with self.mutex_characters:
-            self.characters.append(Character(body_model=BodyModel("stick_figure2"),
-                                             controller=BVHFileController(filename, args=args)))
-
-    def add_nn_character(self, model, args):
-        with self.mutex_characters:
-            self.characters.append(Character(NNController(model, args=args)))
         
         

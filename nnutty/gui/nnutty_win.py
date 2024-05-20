@@ -7,7 +7,8 @@ ICON_PATH = "resources\\app.ico"
 
 class NNuttyWin(QtWidgets.QMainWindow):
 
-    def __init__(self, parent=None, args=None):
+    def __init__(self, nnutty, parent=None):
+        self.nnutty = nnutty
         super().__init__(parent)
 
         if Path(ICON_PATH).exists():
@@ -29,10 +30,10 @@ class NNuttyWin(QtWidgets.QMainWindow):
         self.grp_charctrl = self._add_group(1, 0, 1, 1, title="Character Controls")
         self.grp_controller = self._add_group(0, 1, 2, 1, title="Controller Settings")
 
-        self._setup_grp_settings()
-        self._setup_grp_character()
-        self._setup_grp_charctrl()
-        self._setup_grp_controller()
+        self._setup_grp_settings(self.grp_settings)
+        self._setup_grp_character(self.grp_character)
+        self._setup_grp_charctrl(self.grp_charctrl)
+        self._setup_grp_controller(self.grp_controller)
 
     def _add_group(self, row, col, rowSpan, colSpan, title=""):
         groupBox = QtWidgets.QGroupBox(title=title)
@@ -42,18 +43,33 @@ class NNuttyWin(QtWidgets.QMainWindow):
         sizePolicy.setHeightForWidth(groupBox.sizePolicy().hasHeightForWidth())
         groupBox.setSizePolicy(sizePolicy)
         self.grid.addWidget(groupBox, row, col, rowSpan, colSpan)
+        vbox = QtWidgets.QVBoxLayout()
+        groupBox.setLayout(vbox)
         return groupBox
     
-    def _setup_grp_settings(self):
+    def _setup_grp_settings(self, grp):
         pass
 
-    def _setup_grp_character(self):
+    def _setup_grp_character(self, grp):
+        # add button to set the character to be a BVH type
+        btn_bvh = QtWidgets.QPushButton("BVH Character")
+        btn_bvh.clicked.connect(lambda :self.nnutty.add_bvh_character())
+
+        btn_nn = QtWidgets.QPushButton("NeuroNutty Character")
+        btn_nn.clicked.connect(lambda :self.nnutty.add_nn_character(None))
+        
+        grp.layout().addWidget(btn_bvh)
+        grp.layout().addWidget(btn_nn)
+
+
+    def set_character_bvh(self):
+        self.character = NNuttyViewer(args=self.args)
+        self.character.run()
+
+    def _setup_grp_charctrl(self, grp):
         pass
 
-    def _setup_grp_charctrl(self):
-        pass
-
-    def _setup_grp_controller(self):
+    def _setup_grp_controller(self, grp):
         pass
     
     def _setup_menus(self):

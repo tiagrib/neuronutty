@@ -12,3 +12,12 @@ class CharCtrlType(Enum):
 class CharacterController():
     def __init__(self, ctrl_type: CharCtrlType = CharCtrlType.UNKNOWN):
         self.ctrl_type = ctrl_type
+
+    def reset_pose(self):
+        pass
+
+    def advance_time(self, dt, params={}):
+        pass
+
+    def get_pose(self):
+        return None
