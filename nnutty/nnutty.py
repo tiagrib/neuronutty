@@ -59,7 +59,7 @@ class Worker(QtCore.QRunnable):
 class NNutty(QtCore.QObject):
     def __init__(self):
         super().__init__()
-        
+
         self.args = parse_args()
         self.app = QtGui.QGuiApplication(sys.argv)
         #self.app = QtWidgets.QApplication(sys.argv)
@@ -80,14 +80,20 @@ class NNutty(QtCore.QObject):
             self.characters.clear()
             filename = "C:/repo/mocap/accad_motion_lab/Female1_bvh/Female1_A03_SwingT2.bvh"
             self.characters.append(Character(body_model=BodyModel("stick_figure2"),
-                                             controller=BVHFileController(filename, args=self.args)))
+                                             controller=BVHFileController(filename=filename, 
+                                                                          v_front=self.args.axis_face, 
+                                                                          v_up=self.args.axis_up, 
+                                                                          scale=self.args.scale)))
     
     @QtCore.Slot()
     def add_nn_character(self, model=None):
         with self.mutex_characters:
             self.characters.clear()
             self.characters.append(Character(body_model=None,
-                                             controller=NNController(model, args=self.args)))
+                                             controller=NNController(model, 
+                                                                     v_front=self.args.axis_face, 
+                                                                     v_up=self.args.axis_up, 
+                                                                     scale=self.args.scale)))
 
     def get_characters(self):
         char_enum = None
