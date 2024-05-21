@@ -12,9 +12,19 @@ class CharCtrlType(Enum):
     ANIM_FILE = 1
     # source of the character is from a model
     MODEL = 2
+    # source of the character is from a wave controller
+    WAVE = 3
+
+    def __str__(self):
+        return self.name
 
 class CharacterSettings():
-    def __init__(self, v_up=None, v_front=None, scale=None):
+    def __init__(self, v_up=None, v_front=None, scale=None, args=None):
+        if args:
+            v_up = args.axis_up
+            v_front = args.axis_face
+            scale = args.scale
+
         self.v_up = utils.str_to_axis(v_up if v_up else DEFAULT_V_UP)
         self.v_front = utils.str_to_axis(v_front if v_front else DEFAULT_V_FRONT)
         self.scale = scale if scale else DEFAULT_SCALE
@@ -40,7 +50,7 @@ class CharacterController():
     def reset(self):
         pass
 
-    def advance_time(self, dt, params={}):
+    def advance_time(self, dt, params=None):
         pass
 
     def get_pose(self):

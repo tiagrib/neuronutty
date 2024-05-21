@@ -62,18 +62,39 @@ ApplicationWindow {
                         text: "Add NN Character"
                         onClicked: nnutty.add_nn_character()
                     }
+                    Button {
+                        text: "Add Wave Character"
+                        onClicked: nnutty.add_wave_character()
+                    }
                 }
             }
             GroupBox {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
+                id: characterControls
                 title: "Character Controls"
+                visible: nnutty.has_character()
+
+                Connections {
+                    target: nnutty
+                    onCharactersModified: {
+                        characterControls.visible = nnutty.has_character()
+                        controllerTypeLabel.text = "Controller Type: " + nnutty.get_selected_character_controller_type()
+                    }
+                }
                 ColumnLayout {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
+
+                    Label {
+                        id: controllerTypeLabel
+                        text: "Controller Type: " + nnutty.get_selected_character_controller_type()
+                    }
+                    
                     Switch {
                         id: switchShowOrigin
                         onCheckedChanged: nnutty.show_character_origin(checked)
+                        checked: nnutty.get_show_character_origin()
                     }
                     Label { text: "World Position" }
                     Row {

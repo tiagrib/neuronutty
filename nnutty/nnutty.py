@@ -4,6 +4,8 @@ from threading import Lock
 
 from PySide6 import QtGui, QtCore, QtWidgets
 
+from nnutty.controllers.character_controller import CharacterSettings
+from nnutty.controllers.wave_controller import WaveAnimController
 from nnutty.gui.nnutty_win import NNuttyWin
 from nnutty.viz.nnutty_viewer import NNuttyViewer
 from nnutty.controllers.character import BodyModel, Character
@@ -57,6 +59,8 @@ class Worker(QtCore.QRunnable):
         self.fn(*self.args, **self.kwargs)
 
 class NNutty(QtCore.QObject):
+    charactersModified = QtCore.Signal()
+
     def __init__(self):
         super().__init__()
 
@@ -86,6 +90,7 @@ class NNutty(QtCore.QObject):
                                                                           v_front=self.args.axis_face, 
                                                                           v_up=self.args.axis_up, 
                                                                           scale=self.args.scale)))
+        self.charactersModified.emit() 
     
     @QtCore.Slot()
     def add_nn_character(self, model=None):
@@ -93,9 +98,17 @@ class NNutty(QtCore.QObject):
             self.characters.clear()
             self.characters.append(Character(body_model=None,
                                              controller=NNController(model, 
-                                                                     v_front=self.args.axis_face, 
-                                                                     v_up=self.args.axis_up, 
-                                                                     scale=self.args.scale)))
+                                                                     CharacterSettings(args=self.args))))
+        self.charactersModified.emit() 
+            
+    @QtCore.Slot()
+    def add_wave_character(self, model=None):
+        with self.mutex_characters:
+            self.characters.clear()
+            self.characters.append(Character(body_model=None,
+                                             controller=WaveAnimController(model, 
+                                                                           CharacterSettings(args=self.args))))
+        self.charactersModified.emit() 
             
     @QtCore.Slot(float, float, float)
     def set_character_world_position(self, x, y, z):
@@ -109,6 +122,24 @@ class NNutty(QtCore.QObject):
         if self.characters:
             with self.mutex_characters:
                 self.characters[0].controller.settings.set_show_origin(show)
+
+    @QtCore.Slot(result=bool)
+    def get_show_character_origin(self):
+        if self.characters:
+            with self.mutex_characters:
+                return self.characters[0].controller.settings.show_origin
+        return False
+    
+    @QtCore.Slot(result=bool)
+    def has_character(self):
+        with self.mutex_characters:
+            return len(self.characters) > 0
+        
+    @QtCore.Slot(result=str)
+    def get_selected_character_controller_type(self):
+        if self.characters:
+            with self.mutex_characters:
+                return str(self.characters[0].controller.ctrl_type)
 
     def get_characters(self):
         char_enum = None
