@@ -87,9 +87,7 @@ class NNutty(QtCore.QObject):
             filename = "C:/repo/mocap/accad_motion_lab/Female1_bvh/Female1_A03_SwingT2.bvh"
             self.characters.append(Character(body_model=BodyModel("stick_figure2"),
                                              controller=BVHFileController(filename=filename, 
-                                                                          v_front=self.args.axis_face, 
-                                                                          v_up=self.args.axis_up, 
-                                                                          scale=self.args.scale)))
+                                                                          settings=CharacterSettings(args=self.args))))
         self.charactersModified.emit() 
     
     @QtCore.Slot()

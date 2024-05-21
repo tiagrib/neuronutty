@@ -40,21 +40,17 @@ class AnimFileController(CachedAnimController):
 class BVHFileController(AnimFileController):
     def __init__(self,
                  filename:str,
-                 v_front:str = None,
-                 v_up:str = None,
-                 scale:str = None):
+                 settings:CharacterSettings = None):
         super().__init__(filename=filename,
                          file_type=AnimFileType.BVH,
-                         settings=CharacterSettings(v_front=v_front, v_up=v_up, scale=scale))
+                         settings=settings)
 
 
 class ASFAMCFileController(AnimFileController):
     def __init__(self,
                  asf_filename:str,
                  asc_filename:str,
-                 v_front:str = None,
-                 v_up:str = None,
-                 scale:str = None):
+                 settings:CharacterSettings = None,):
         super().__init__(filename=[asf_filename, asc_filename],
                          file_type=AnimFileType.ASFAMC,
-                         settings=CharacterSettings(v_front=v_front, v_up=v_up, scale=scale))
+                         settings=settings)
