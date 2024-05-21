@@ -2,7 +2,7 @@ import sys
 import argparse
 from threading import Lock
 
-from PySide6 import QtWidgets, QtCore
+from PySide6 import QtGui, QtCore
 
 from nnutty.gui.nnutty_win import NNuttyWin
 from nnutty.viz.nnutty_viewer import NNuttyViewer
@@ -56,10 +56,13 @@ class Worker(QtCore.QRunnable):
         '''
         self.fn(*self.args, **self.kwargs)
 
-class NNutty:
+class NNutty(QtCore.QObject):
     def __init__(self):
+        super().__init__()
+        
         self.args = parse_args()
-        self.app = QtWidgets.QApplication(sys.argv)
+        self.app = QtGui.QGuiApplication(sys.argv)
+        #self.app = QtWidgets.QApplication(sys.argv)
         self.threadpool = QtCore.QThreadPool()
         print("Multithreading with maximum %d threads" % self.threadpool.maxThreadCount())
         self.win = NNuttyWin(self)
@@ -71,14 +74,16 @@ class NNutty:
         self.mutex_characters = Lock()
         self.characters = []
 
+    @QtCore.Slot()
     def add_bvh_character(self):
         with self.mutex_characters:
             self.characters.clear()
             filename = "C:/repo/mocap/accad_motion_lab/Female1_bvh/Female1_A03_SwingT2.bvh"
             self.characters.append(Character(body_model=BodyModel("stick_figure2"),
                                              controller=BVHFileController(filename, args=self.args)))
-
-    def add_nn_character(self, model):
+    
+    @QtCore.Slot()
+    def add_nn_character(self, model=None):
         with self.mutex_characters:
             self.characters.clear()
             self.characters.append(Character(body_model=None,
