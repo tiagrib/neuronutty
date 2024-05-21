@@ -2,7 +2,7 @@ import sys
 import argparse
 from threading import Lock
 
-from PySide6 import QtGui, QtCore
+from PySide6 import QtGui, QtCore, QtWidgets
 
 from nnutty.gui.nnutty_win import NNuttyWin
 from nnutty.viz.nnutty_viewer import NNuttyViewer
@@ -17,8 +17,8 @@ def parse_args():
     parser.add_argument("--speed", type=float, default=1.0)
     parser.add_argument("--axis-up", type=str, choices=["x", "y", "z"], default="y")
     parser.add_argument("--axis-face", type=str, choices=["x", "y", "z"], default="z")
-    parser.add_argument("--camera-position", nargs="+", type=float, required=False, default=(0.0, 5.0, 5.0))
-    parser.add_argument("--camera-origin", nargs="+", type=float, required=False, default=(0, 0.0, 0.0))
+    parser.add_argument("--camera-position", nargs="+", type=float, required=False, default=(0.0, 15.0, 20.0))
+    parser.add_argument("--camera-origin", nargs="+", type=float, required=False, default=(0, 5.0, 0.0))
     parser.add_argument("--hide-origin", action="store_false")
     parser.add_argument("--render-overlay", action="store_false")
     args = parser.parse_args()
@@ -61,7 +61,9 @@ class NNutty(QtCore.QObject):
         super().__init__()
 
         self.args = parse_args()
-        self.app = QtGui.QGuiApplication(sys.argv)
+
+        #app = QtWidgets.QApplication(sys.argv)
+        self.app = QtWidgets.QApplication(sys.argv)
         #self.app = QtWidgets.QApplication(sys.argv)
         self.threadpool = QtCore.QThreadPool()
         print("Multithreading with maximum %d threads" % self.threadpool.maxThreadCount())
@@ -94,6 +96,19 @@ class NNutty(QtCore.QObject):
                                                                      v_front=self.args.axis_face, 
                                                                      v_up=self.args.axis_up, 
                                                                      scale=self.args.scale)))
+            
+    @QtCore.Slot(float, float, float)
+    def set_character_world_position(self, x, y, z):
+        print("Setting character world position: ", x, y, z)
+        if self.characters:
+            with self.mutex_characters:
+                self.characters[0].controller.settings.set_world_offset([x, y, z])
+
+    @QtCore.Slot(bool)
+    def show_character_origin(self, show):
+        if self.characters:
+            with self.mutex_characters:
+                self.characters[0].controller.settings.set_show_origin(show)
 
     def get_characters(self):
         char_enum = None

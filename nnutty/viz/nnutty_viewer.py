@@ -8,7 +8,7 @@ from OpenGL.GLUT import *
 
 from fairmotion.viz import camera, gl_render, glut_viewer
 from fairmotion.ops import conversions, math
-from fairmotion.utils import utils
+from fairmotion.utils import utils, constants
 
 
 
@@ -42,7 +42,8 @@ class NNuttyViewer(glut_viewer.Viewer):
             fov=45.0,
         )
         super().__init__(title="NeuroNutty Viewer",
-                         size=(1280, 720))
+                         size=(1280, 720),
+                         cam=self.cam)
         
     def run(self, **kwargs):
         import pydevd;
@@ -88,7 +89,7 @@ class NNuttyViewer(glut_viewer.Viewer):
             return False
         return True
 
-    def _render_pose(self, pose, body_model, color):
+    def _render_pose(self, pose, character, color):
         skel = pose.skel
         for j in skel.joints:
             T = pose.get_transform(j, local=False)
@@ -99,7 +100,7 @@ class NNuttyViewer(glut_viewer.Viewer):
                 pos_parent = conversions.T2p(
                     pose.get_transform(j.parent_joint, local=False)
                 )
-                p = 0.5 * (pos_parent + pos)
+                p = 0.5 * (pos_parent + pos) + character.controller.settings.world_offset
                 l = np.linalg.norm(pos_parent - pos)
                 r = 0.1 * self.thickness
                 R = math.R_from_vectors(np.array([0, 0, 1]), pos_parent - pos)
@@ -118,6 +119,10 @@ class NNuttyViewer(glut_viewer.Viewer):
             np.array([85, 160, 173, 255]) / 255.0,  # blue
         ]
         for i, character in self.nnutty.get_characters():
+            
+            if character.controller.settings.show_origin:
+                gl_render.render_transform(constants.eye_T(), use_arrow=True, line_width=self.nnutty.args.thickness)
+
             pose = character.get_pose()
             if pose:
                 color = colors[i % len(colors)]
@@ -126,7 +131,7 @@ class NNuttyViewer(glut_viewer.Viewer):
                 glEnable(GL_DEPTH_TEST)
 
                 glEnable(GL_LIGHTING)
-                self._render_pose(pose, character.body_model.name, color)
+                self._render_pose(pose, character, color)
 
     def render_callback(self):
         gl_render.render_ground(

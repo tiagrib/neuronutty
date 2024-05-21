@@ -18,6 +18,14 @@ class CharacterSettings():
         self.v_up = utils.str_to_axis(v_up if v_up else DEFAULT_V_UP)
         self.v_front = utils.str_to_axis(v_front if v_front else DEFAULT_V_FRONT)
         self.scale = scale if scale else DEFAULT_SCALE
+        self.world_offset = [0.0, 0.0, 0.0]
+        self.show_origin = True
+
+    def set_world_offset(self, offset):
+        self.world_offset = offset
+
+    def set_show_origin(self, show_origin):
+        self.show_origin = show_origin
 
 class CharacterController():
     def __init__(self, 
