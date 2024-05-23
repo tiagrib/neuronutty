@@ -1,22 +1,44 @@
 from enum import Enum
 from fairmotion.utils import utils
+from PySide6 import QtCore
 
 DEFAULT_V_UP = "z"
 DEFAULT_V_FRONT = "y"
 DEFAULT_SCALE = 1.0
 
 class CharCtrlType(Enum):
-    # source of the character is unknown
     UNKNOWN = 0
-    # source of the character is from an animation file
     ANIM_FILE = 1
-    # source of the character is from a model
     MODEL = 2
-    # source of the character is from a wave controller
     WAVE = 3
+    DIP = 4
 
     def __str__(self):
         return self.name
+
+class CharCtrlTypeWrapper(QtCore.QObject):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+    @QtCore.Property(int, constant=True)
+    def UNKNOWN(self):
+        return CharCtrlType.UNKNOWN.value
+
+    @QtCore.Property(int, constant=True)
+    def ANIM_FILE(self):
+        return CharCtrlType.ANIM_FILE.value
+
+    @QtCore.Property(int, constant=True)
+    def MODEL(self):
+        return CharCtrlType.MODEL.value
+
+    @QtCore.Property(int, constant=True)
+    def WAVE(self):
+        return CharCtrlType.WAVE.value
+    
+    @QtCore.Property(int, constant=True)
+    def DIP(self):
+        return CharCtrlType.DIP.value
 
 class CharacterSettings():
     def __init__(self, v_up=None, v_front=None, scale=None, args=None):

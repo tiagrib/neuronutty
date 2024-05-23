@@ -1,7 +1,8 @@
 from pathlib import Path
-from PySide6 import QtCore, QtGui, QtWidgets, QtQml, QtQuick
+from PySide6 import QtCore, QtWidgets, QtQml
 
-from nnutty.viz.nnutty_viewer import NNuttyViewer
+from nnutty.controllers.character_controller import CharCtrlTypeWrapper
+from nnutty.gui.file_tree_model import FileTreeModel
 
 ICON_PATH = "resources\\app.ico"
 
@@ -15,6 +16,10 @@ class NNuttyWin():
 
         context = self.engine.rootContext()
         context.setContextProperty("nnutty", self.nnutty)
+        self.charCtrlTypeWrapper = CharCtrlTypeWrapper()
+        context.setContextProperty("CharCtrlType", self.charCtrlTypeWrapper)
+
+        QtQml.qmlRegisterType(FileTreeModel, 'NNutty', 1, 0, 'FileTreeModel')
 
         self.component = QtQml.QQmlComponent(self.engine)
         self.component.loadUrl(QtCore.QUrl("nnutty/gui/qml/nnutty_win.qml"))

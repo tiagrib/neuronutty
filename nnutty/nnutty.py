@@ -1,8 +1,9 @@
 import sys
 import argparse
+import logging
 from threading import Lock
 
-from PySide6 import QtGui, QtCore, QtWidgets
+from PySide6 import QtCore
 
 from nnutty.controllers.character_controller import CharacterSettings
 from nnutty.controllers.wave_controller import WaveAnimController
@@ -11,6 +12,7 @@ from nnutty.viz.nnutty_viewer import NNuttyViewer
 from nnutty.controllers.character import BodyModel, Character
 from nnutty.controllers.anim_file_controller import BVHFileController
 from nnutty.controllers.nn_controller import NNController
+from nnutty.controllers.dip_controller import DIPModelController
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Visualize BVH file with block body")
@@ -61,13 +63,13 @@ class Worker(QtCore.QRunnable):
 class NNutty(QtCore.QObject):
     charactersModified = QtCore.Signal()
 
-    def __init__(self):
+    def __init__(self, app):
         super().__init__()
 
         self.args = parse_args()
 
         #app = QtWidgets.QApplication(sys.argv)
-        self.app = QtWidgets.QApplication(sys.argv)
+        self.app = app
         #self.app = QtWidgets.QApplication(sys.argv)
         self.threadpool = QtCore.QThreadPool()
         print("Multithreading with maximum %d threads" % self.threadpool.maxThreadCount())
@@ -81,7 +83,8 @@ class NNutty(QtCore.QObject):
         self.characters = []
 
     @QtCore.Slot()
-    def add_bvh_character(self):
+    def add_animfile_character(self):
+        logging.info("add_animfile_character()")
         with self.mutex_characters:
             self.characters.clear()
             filename = "C:/repo/mocap/accad_motion_lab/Female1_bvh/Female1_A03_SwingT2.bvh"
@@ -89,9 +92,19 @@ class NNutty(QtCore.QObject):
                                              controller=BVHFileController(filename=filename, 
                                                                           settings=CharacterSettings(args=self.args))))
         self.charactersModified.emit() 
+
+    @QtCore.Slot()
+    def add_dip_character(self):
+        logging.info("add_dip_character()")
+        with self.mutex_characters:
+            self.characters.clear()
+            self.characters.append(Character(body_model=BodyModel("stick_figure2"),
+                                             controller=DIPModelController(settings=CharacterSettings(args=self.args))))
+        self.charactersModified.emit() 
     
     @QtCore.Slot()
     def add_nn_character(self, model=None):
+        logging.info("add_nn_character()")
         with self.mutex_characters:
             self.characters.clear()
             self.characters.append(Character(body_model=None,
@@ -101,6 +114,7 @@ class NNutty(QtCore.QObject):
             
     @QtCore.Slot()
     def add_wave_character(self, model=None):
+        logging.info("add_wave_character()")
         with self.mutex_characters:
             self.characters.clear()
             self.characters.append(Character(body_model=None,
@@ -110,13 +124,14 @@ class NNutty(QtCore.QObject):
             
     @QtCore.Slot(float, float, float)
     def set_character_world_position(self, x, y, z):
-        print("Setting character world position: ", x, y, z)
+        logging.info("set_character_world_position:", x, y, z)
         if self.characters:
             with self.mutex_characters:
                 self.characters[0].controller.settings.set_world_offset([x, y, z])
 
     @QtCore.Slot(bool)
     def show_character_origin(self, show):
+        logging.info("show_character_origin:", show)
         if self.characters:
             with self.mutex_characters:
                 self.characters[0].controller.settings.set_show_origin(show)
@@ -127,17 +142,17 @@ class NNutty(QtCore.QObject):
             with self.mutex_characters:
                 return self.characters[0].controller.settings.show_origin
         return False
-    
-    @QtCore.Slot(result=bool)
-    def has_character(self):
-        with self.mutex_characters:
-            return len(self.characters) > 0
-        
-    @QtCore.Slot(result=str)
+
+    @QtCore.Slot(result=int)
     def get_selected_character_controller_type(self):
         if self.characters:
             with self.mutex_characters:
-                return str(self.characters[0].controller.ctrl_type)
+                return self.characters[0].controller.ctrl_type.value
+        return None
+    
+    @QtCore.Slot(int, result=str)
+    def getCharCtrlTypeName(self, value):
+        return str(value)
 
     def get_characters(self):
         char_enum = None

@@ -34,6 +34,21 @@ ApplicationWindow {
         return integer / main.spinnerDecimalFactor
     }
 
+    function getCharacterControlsSource() {
+        switch (nnutty.get_selected_character_controller_type()) {
+            case CharCtrlType.ANIM_FILE:
+                return "char_ctrl_anim_file.qml";
+            case CharCtrlType.MODEL:
+                return "char_ctrl_nn.qml";
+            case CharCtrlType.WAVE:
+                return "char_ctrl_wave.qml";
+            case CharCtrlType.DIP:
+                return "char_ctrl_dip.qml";
+            default:
+                return "";
+        }
+    }
+
     RowLayout {
         anchors.fill: parent
         ColumnLayout {
@@ -55,11 +70,15 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     Button {
-                        text: "Add BVH Character"
-                        onClicked: nnutty.add_bvh_character()
+                        text: "AnimFile Character"
+                        onClicked: nnutty.add_animfile_character()
                     }
                     Button {
-                        text: "Add NN Character"
+                        text: "DIP Model Character"
+                        onClicked: nnutty.add_dip_character()
+                    }
+                    Button {
+                        text: "NeuroNutty Model Character"
                         onClicked: nnutty.add_nn_character()
                     }
                     Button {
@@ -73,22 +92,15 @@ ApplicationWindow {
                 Layout.fillHeight: true
                 id: characterControls
                 title: "Character Controls"
-                visible: nnutty.has_character()
+                visible: nnutty.get_selected_character_controller_type() !== null
 
-                Connections {
-                    target: nnutty
-                    onCharactersModified: {
-                        characterControls.visible = nnutty.has_character()
-                        controllerTypeLabel.text = "Controller Type: " + nnutty.get_selected_character_controller_type()
-                    }
-                }
                 ColumnLayout {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
 
                     Label {
                         id: controllerTypeLabel
-                        text: "Controller Type: " + nnutty.get_selected_character_controller_type()
+                        text: "No Character Selected."
                     }
                     
                     Switch {
@@ -117,6 +129,7 @@ ApplicationWindow {
                             }
                             textFromValue: main.spinnerTextFromValue
                             valueFromText: main.spinnerValueFromText
+                            onValueChanged: nnutty.set_character_world_position(spinnerIntToDecimal(spinBoxX.value), spinnerIntToDecimal(spinBoxY.value), spinnerIntToDecimal(spinBoxZ.value))
                         }
                     }
                     Row {
@@ -139,6 +152,7 @@ ApplicationWindow {
                             }
                             textFromValue: main.spinnerTextFromValue
                             valueFromText: main.spinnerValueFromText
+                            onValueChanged: nnutty.set_character_world_position(spinnerIntToDecimal(spinBoxX.value), spinnerIntToDecimal(spinBoxY.value), spinnerIntToDecimal(spinBoxZ.value))
                         }
                     }
                     Row {
@@ -161,23 +175,40 @@ ApplicationWindow {
                             }
                             textFromValue: main.spinnerTextFromValue
                             valueFromText: main.spinnerValueFromText
+                            onValueChanged: nnutty.set_character_world_position(spinnerIntToDecimal(spinBoxX.value), spinnerIntToDecimal(spinBoxY.value), spinnerIntToDecimal(spinBoxZ.value))
                         }
-                    }
-                    Button {
-                        text: "Set Position"
-                        onClicked: nnutty.set_character_world_position(spinnerIntToDecimal(spinBoxX.value), spinnerIntToDecimal(spinBoxY.value), spinnerIntToDecimal(spinBoxZ.value))
                     }
                 }
             }
         }
+
         ColumnLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            GroupBox {
+
+            Rectangle {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                title: "Controller"
-                Label { text: "Line 2" }
+                id: controllerControls
+                color: "transparent"
+                visible: nnutty.get_selected_character_controller_type() !== null
+
+                Loader {
+                    id: characterControlsLoader
+                    anchors.fill: parent
+                    source: main.getCharacterControlsSource()
+                }
+            }
+        }
+
+        Connections {
+            target: nnutty
+            function onCharactersModified() {
+                controllerControls.visible = nnutty.get_selected_character_controller_type() !== null
+                controllerTypeLabel.text = "Controller Type: " + nnutty.getCharCtrlTypeName(nnutty.get_selected_character_controller_type())
+                characterControlsLoader.source = ""
+                characterControlsLoader.source = main.getCharacterControlsSource()
+                switchShowOrigin.checked = nnutty.get_show_character_origin()
             }
         }
     }
