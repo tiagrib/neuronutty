@@ -6,13 +6,13 @@ import Qt.labs.platform 1.1
 import NNutty 1.0
 
 GroupBox {
-    Layout.fillWidth: true
-    Layout.fillHeight: true
+    anchors.fill: parent
     id: grpCtrlAnimFile
     title: "AnimFile Controller"
 
     ColumnLayout {
-        anchors.fill: parent
+        Layout.fillWidth: true
+        Layout.fillHeight: true
 
         TextField {
             id: pathField
@@ -45,7 +45,7 @@ GroupBox {
                 model: FileTreeModel {
                     id: folderModel
                     folder: pathField.text
-                    filter: "*.pkl"
+                    filter: "*.pkl,*.bvh"
                 }
 
                 delegate: Item {
@@ -62,7 +62,7 @@ GroupBox {
                     }
                 }
 
-                onCurrentIndexChanged: console.log("Selected item: " + model.getItemData(listView.currentIndex))
+                onCurrentIndexChanged: nnutty.setSelectedAnimationFile(folderModel.folder, model.getItemData(listView.currentIndex))
 
             }
         }

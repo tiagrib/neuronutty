@@ -121,7 +121,8 @@ class NNuttyViewer(glut_viewer.Viewer):
         for i, character in self.nnutty.get_characters():
             
             if character.controller.settings.show_origin:
-                gl_render.render_transform(constants.eye_T(), use_arrow=True, line_width=self.nnutty.args.thickness)
+                gl_render.render_transform(conversions.p2T(character.controller.settings.world_offset), 
+                                           use_arrow=True, line_width=self.nnutty.args.thickness)
 
             pose = character.get_pose()
             if pose:

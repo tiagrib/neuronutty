@@ -17,6 +17,7 @@ class CachedAnimController(CharacterController):
         self.motion = motion
         self.end_time = self.motion.length()
         self.fps = self.motion.fps
+        self.reset()
 
     def reset(self):
         self.cur_time = 0.0

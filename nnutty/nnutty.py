@@ -1,3 +1,4 @@
+from pathlib import Path
 import sys
 import argparse
 import logging
@@ -10,7 +11,7 @@ from nnutty.controllers.wave_controller import WaveAnimController
 from nnutty.gui.nnutty_win import NNuttyWin
 from nnutty.viz.nnutty_viewer import NNuttyViewer
 from nnutty.controllers.character import BodyModel, Character
-from nnutty.controllers.anim_file_controller import BVHFileController
+from nnutty.controllers.anim_file_controller import AnimFileController
 from nnutty.controllers.nn_controller import NNController
 from nnutty.controllers.dip_controller import DIPModelController
 
@@ -66,6 +67,8 @@ class NNutty(QtCore.QObject):
     def __init__(self, app):
         super().__init__()
 
+        logging.basicConfig(level=logging.INFO)
+
         self.args = parse_args()
 
         #app = QtWidgets.QApplication(sys.argv)
@@ -87,10 +90,8 @@ class NNutty(QtCore.QObject):
         logging.info("add_animfile_character()")
         with self.mutex_characters:
             self.characters.clear()
-            filename = "C:/repo/mocap/accad_motion_lab/Female1_bvh/Female1_A03_SwingT2.bvh"
             self.characters.append(Character(body_model=BodyModel("stick_figure2"),
-                                             controller=BVHFileController(filename=filename, 
-                                                                          settings=CharacterSettings(args=self.args))))
+                                             controller=AnimFileController(settings=CharacterSettings(args=self.args))))
         self.charactersModified.emit() 
 
     @QtCore.Slot()
@@ -124,14 +125,14 @@ class NNutty(QtCore.QObject):
             
     @QtCore.Slot(float, float, float)
     def set_character_world_position(self, x, y, z):
-        logging.info("set_character_world_position:", x, y, z)
+        logging.info(f"set_character_world_position: [{x}, {y}, {z}]")
         if self.characters:
             with self.mutex_characters:
                 self.characters[0].controller.settings.set_world_offset([x, y, z])
 
     @QtCore.Slot(bool)
     def show_character_origin(self, show):
-        logging.info("show_character_origin:", show)
+        logging.info(f"show_character_origin: {show}")
         if self.characters:
             with self.mutex_characters:
                 self.characters[0].controller.settings.set_show_origin(show)
@@ -153,6 +154,10 @@ class NNutty(QtCore.QObject):
     @QtCore.Slot(int, result=str)
     def getCharCtrlTypeName(self, value):
         return str(value)
+    
+    @QtCore.Slot(str, str)
+    def setSelectedAnimationFile(self, folder, filename):
+        self.characters[0].controller.load_anim_file(Path(folder) / filename)
 
     def get_characters(self):
         char_enum = None

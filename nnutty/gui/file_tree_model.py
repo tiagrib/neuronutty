@@ -30,7 +30,9 @@ class FileTreeModel(QtGui.QStandardItemModel):
     @QtCore.Slot(int, result=str)
     def getItemData(self, index):
         item = self.item(index)
-        return item.data(QtCore.Qt.DisplayRole)
+        if item:
+            return item.data(QtCore.Qt.DisplayRole)
+        return ''
 
     folder = QtCore.Property(str, get_folder, set_folder, notify=folderChanged)
     filter = QtCore.Property(str, get_filter, set_filter, notify=filterChanged)
@@ -43,6 +45,7 @@ class FileTreeModel(QtGui.QStandardItemModel):
             return
         
         for root, dirs, files in os.walk(self._folder):
-            for file in fnmatch.filter(files, self._filter):
-                item = QtGui.QStandardItem(file)
-                self.appendRow(item)
+            for extension in self._filter.split(','):
+                for file in fnmatch.filter(files, extension):
+                    item = QtGui.QStandardItem(file)
+                    self.appendRow(item)
