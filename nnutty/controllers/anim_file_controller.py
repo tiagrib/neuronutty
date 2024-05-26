@@ -15,7 +15,6 @@ class AnimFileController(CachedAnimController):
         
 
     def load_anim_file(self, filename:str):
-
         motion = None
         if filename:
             if not isinstance(filename, list):

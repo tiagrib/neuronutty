@@ -41,7 +41,7 @@ ApplicationWindow {
             case CharCtrlType.ANIM_FILE:
                 return "char_ctrl_anim_file.qml";
             case CharCtrlType.MODEL:
-                return "char_ctrl_nn.qml";
+                return "char_ctrl_anim_file.qml";
             case CharCtrlType.WAVE:
                 return "char_ctrl_wave.qml";
             case CharCtrlType.DIP:
@@ -160,6 +160,10 @@ ApplicationWindow {
                     Button {
                         text: "AnimFile Character"
                         onClicked: nnutty.add_animfile_character()
+                    }
+                    Button {
+                        text: "Fairmotion Model Character"
+                        onClicked: nnutty.add_fairmotion_model_character()
                     }
                     Button {
                         text: "DIP Model Character"

@@ -126,7 +126,9 @@ class NNuttyViewer(glut_viewer.Viewer):
 
             pose = character.get_pose()
             if pose:
-                color = colors[i % len(colors)]
+                color = character.controller.settings.color
+                if color is None:
+                    color = colors[i % len(colors)]
 
                 glEnable(GL_LIGHTING)
                 glEnable(GL_DEPTH_TEST)
@@ -157,10 +159,18 @@ class NNuttyViewer(glut_viewer.Viewer):
         if self.render_overlay:
             w, h = self.window_size
             gl_render.render_text(
-                f"Time: {self.cur_time:.2}",
+                f"Time: {self.cur_time:.2f}",
                 pos=[0.05 * w, 0.95 * h],
                 font=GLUT_BITMAP_TIMES_ROMAN_24,
             )
+
+            for i, character in self.nnutty.get_characters():
+                ctrl_type = character.controller.ctrl_type
+                gl_render.render_text(
+                    f"Character #{i}: {ctrl_type.name}; t={character.controller.cur_time:.2f}",
+                    pos=[0.05 * w, 0.90 * h - 5*i],
+                    font=GLUT_BITMAP_TIMES_ROMAN_24,
+                )
 
     def record_callback(self):
         if self.recording:

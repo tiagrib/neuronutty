@@ -7,6 +7,7 @@ from threading import Lock
 from PySide6 import QtCore
 
 from nnutty.controllers.character_controller import CharacterSettings
+from nnutty.controllers.fairmotion_torch_model_controller import FairmotionModelController
 from nnutty.controllers.wave_controller import WaveAnimController
 from nnutty.gui.nnutty_win import NNuttyWin
 from nnutty.viz.nnutty_viewer import NNuttyViewer
@@ -92,6 +93,16 @@ class NNutty(QtCore.QObject):
             self.characters.clear()
             self.characters.append(Character(body_model=BodyModel("stick_figure2"),
                                              controller=AnimFileController(settings=CharacterSettings(args=self.args))))
+        self.charactersModified.emit() 
+
+    @QtCore.Slot()
+    def add_fairmotion_model_character(self):
+        logging.info("add_fairmotion_model_character()")
+        with self.mutex_characters:
+            self.characters.clear()
+            model = "C:/repo/DIP/models/test1/best.model"
+            self.characters.append(Character(body_model=BodyModel("stick_figure2"),
+                                             controller=FairmotionModelController(model=model, settings=CharacterSettings(args=self.args))))
         self.charactersModified.emit() 
 
     @QtCore.Slot()

@@ -1,6 +1,7 @@
 from enum import Enum
 from fairmotion.utils import utils
 from PySide6 import QtCore
+import numpy as np
 
 DEFAULT_V_UP = "z"
 DEFAULT_V_FRONT = "y"
@@ -52,6 +53,7 @@ class CharacterSettings():
         self.scale = scale if scale else DEFAULT_SCALE
         self.world_offset = [0.0, 0.0, 0.0]
         self.show_origin = True
+        self.color = np.array([85, 160, 173, 255]) / 255.0  # blue
 
     def set_world_offset(self, offset):
         self.world_offset = offset
