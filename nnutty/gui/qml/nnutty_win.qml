@@ -59,98 +59,6 @@ ApplicationWindow {
             Layout.minimumWidth: 200
             Layout.maximumWidth: 500
             GroupBox {
-                title: "Settings"
-                id: settingsGroup
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                Layout.minimumHeight: 200
-
-                FolderDialog {
-                    id: folderDialog
-                    onAccepted: {
-                        var path = folderDialog.folder.toString().replace("file:///", "");
-                        folderListModel.append({"folderPath": path});
-                    }
-                }
-
-                Column {
-                    Button {
-                        text: "Add Folder"
-                        onClicked: folderDialog.open()
-                    }
-
-                    Rectangle {
-                        id: rectangle
-                        color: "transparent"
-                        border.color: "gray"
-                        border.width: 2
-                        property int maxWidth: 100
-                        height: Math.max(folderListView.contentHeight, 40) + 20
-                        width: Math.max(maxWidth, 100) + 20
-
-                        ListModel {
-                            id: folderListModel
-                        }
-
-                        ListView {
-                            id: folderListView
-                            anchors.fill: parent
-                            anchors.margins: 10
-                            model: folderListModel
-                            currentIndex: -1  // Add this line
-
-                            delegate: Item {
-                                id: delegate
-                                height: textItem.implicitHeight + 10
-                                required property string folderPath
-                                property bool isSelected: folderListView.currentItem === delegate
-
-                                Text {
-                                    id: textItem
-                                    text: delegate.folderPath
-                                    color: "white"
-                                }
-
-                                MouseArea {
-                                    anchors.fill: parent
-                                    onClicked: {
-                                        folderListView.currentIndex = index
-                                        console.log("Selected item: " + folderPath)
-                                    }
-                                }
-                            }
-
-                            onCurrentIndexChanged: {  // Add this block
-                                console.log("click")
-                                /*if (currentIndex !== -1) {
-                                    console.log("Selected item: " + model.get(currentIndex).folderPath)
-                                }*/
-                            }
-
-                            Component.onCompleted: {  // Add this block
-                                currentIndex = -1
-                            }
-
-                            onCountChanged: {  // Add this block
-                            console.log("count changed")
-                                var maxItemWidth = 0;
-                                for (var i = 0; i < count; i++) {
-                                    var item = folderListView.contentItem.children[i];
-                                    if (item.width > maxItemWidth) {
-                                        maxItemWidth = item.width;
-                                    }
-                                }
-                                rectangle.maxWidth = maxItemWidth;
-                            }
-                        }
-                    }
-
-                    Button {
-                        text: "Delete Folder"
-                    }
-                }
-            }
-            GroupBox {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 title: "Character"
@@ -198,6 +106,7 @@ ApplicationWindow {
                     Switch {
                         id: switchShowOrigin
                         onCheckedChanged: nnutty.show_character_origin(checked)
+                        text: "Show origin"
                         checked: nnutty.get_show_character_origin()
                     }
                     Label { text: "World Position" }
