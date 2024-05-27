@@ -11,8 +11,8 @@ GroupBox {
     title: "AnimFile Controller"
 
     ColumnLayout {
-        Layout.fillWidth: true
-        Layout.fillHeight: true
+        id: colLayout
+        anchors.fill: parent
 
         TextField {
             id: pathField
@@ -35,13 +35,14 @@ GroupBox {
         }
 
         ScrollView {
+            id: scrollView
             Layout.fillWidth: true
             Layout.fillHeight: true
 
             ListView {
                 id: listView
-                Layout.fillWidth: true
-                Layout.fillHeight: true
+                property int hovered_index: -1
+                anchors.fill: parent
                 model: FileTreeModel {
                     id: folderModel
                     folder: pathField.text
@@ -49,21 +50,35 @@ GroupBox {
                 }
 
                 delegate: Item {
+                    id: delegateItem
                     width: listView.width
-                    height: textItem.implicitHeight + 10
+                    height: Math.max(textItem.implicitHeight, mouseArea.implicitHeight) + 10
+                    Rectangle {
+                        anchors.fill: parent
+                        color: listView.hovered_index === index ? "darkblue" : (listView.currentIndex === index ? "darkred" : "transparent")
+                    }
                     Text {
                         id: textItem
                         text: model.display
                         color: "white"
                     }
                     MouseArea {
+                        id: mouseArea
                         anchors.fill: parent
+                        hoverEnabled: true
                         onClicked: listView.currentIndex = index
+                        onEntered: {
+                            listView.hovered_index = index
+                        }
+                        onExited: {
+                            if (listView.hovered_index === index) {
+                                listView.hovered_index = -1
+                            }
+                        }
                     }
                 }
 
                 onCurrentIndexChanged: nnutty.setSelectedAnimationFile(folderModel.folder, model.getItemData(listView.currentIndex))
-
             }
         }
         
