@@ -10,7 +10,7 @@ from nnutty.controllers.character_controller import CharacterSettings
 from nnutty.controllers.fairmotion_torch_model_controller import FairmotionDualController
 from nnutty.controllers.wave_controller import WaveAnimController
 from nnutty.gui.nnutty_win import NNuttyWin
-from nnutty.viz.nnutty_viewer import NNuttyViewer
+from nnutty.gui.viz.nnutty_viewer import NNuttyViewer
 from nnutty.controllers.character import BodyModel, Character
 from nnutty.controllers.anim_file_controller import AnimFileController
 from nnutty.controllers.nn_controller import NNController
