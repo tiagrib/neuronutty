@@ -60,11 +60,11 @@ ApplicationWindow {
             Layout.maximumWidth: 500
             GroupBox {
                 Layout.fillWidth: true
-                Layout.fillHeight: true
+                Layout.fillHeight: false
                 title: "Character"
                 ColumnLayout {
                     Layout.fillWidth: true
-                    Layout.fillHeight: true
+                    Layout.fillHeight: false
                     Button {
                         text: "AnimFile Character"
                         onClicked: nnutty.add_animfile_character()
@@ -90,94 +90,16 @@ ApplicationWindow {
             GroupBox {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                id: characterControls
-                title: "Character Controls"
-                visible: nnutty.get_selected_character_controller_type_value() !== null
-
-                ColumnLayout {
+                Rectangle {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-
-                    Label {
-                        id: controllerTypeLabel
-                        text: "No Character Selected."
-                    }
-                    
-                    Switch {
-                        id: switchShowOrigin
-                        onCheckedChanged: nnutty.show_character_origin(checked)
-                        text: "Show origin"
-                        checked: nnutty.get_show_character_origin()
-                    }
-                    Label { text: "World Position" }
-                    Row {
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        Label { text: "X:" }
-                        SpinBox {
-                            id: spinBoxX
-                            value: 0.0
-                            from: main.min_spinner_value
-                            to: main.max_spinner_value
-                            stepSize: main.spinnerDecimalFactor
-                            editable: true
-                            property real realValue: value / main.spinnerDecimalFactor
-                            validator: DoubleValidator {
-                                bottom: Math.min(main.min_spinner_value, main.max_spinner_value)
-                                top:  Math.max(main.min_spinner_value, main.max_spinner_value)
-                                decimals: main.spinnerDecimals
-                                notation: DoubleValidator.StandardNotation
-                            }
-                            textFromValue: main.spinnerTextFromValue
-                            valueFromText: main.spinnerValueFromText
-                            onValueChanged: nnutty.set_character_world_position(spinnerIntToDecimal(spinBoxX.value), spinnerIntToDecimal(spinBoxY.value), spinnerIntToDecimal(spinBoxZ.value))
-                        }
-                    }
-                    Row {
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        Label { text: "X:" }
-                        SpinBox {
-                            id: spinBoxY
-                            value: 0.0
-                            from: main.min_spinner_value
-                            to: main.max_spinner_value
-                            stepSize: main.spinnerDecimalFactor
-                            editable: true
-                            property real realValue: value / main.spinnerDecimalFactor
-                            validator: DoubleValidator {
-                                bottom: Math.min(main.min_spinner_value, main.max_spinner_value)
-                                top:  Math.max(main.min_spinner_value, main.max_spinner_value)
-                                decimals: main.spinnerDecimals
-                                notation: DoubleValidator.StandardNotation
-                            }
-                            textFromValue: main.spinnerTextFromValue
-                            valueFromText: main.spinnerValueFromText
-                            onValueChanged: nnutty.set_character_world_position(spinnerIntToDecimal(spinBoxX.value), spinnerIntToDecimal(spinBoxY.value), spinnerIntToDecimal(spinBoxZ.value))
-                        }
-                    }
-                    Row {
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        Label { text: "X:" }
-                        SpinBox {
-                            id: spinBoxZ
-                            value: 0.0
-                            from: main.min_spinner_value
-                            to: main.max_spinner_value
-                            stepSize: main.spinnerDecimalFactor
-                            editable: true
-                            property real realValue: value / main.spinnerDecimalFactor
-                            validator: DoubleValidator {
-                                bottom: Math.min(main.min_spinner_value, main.max_spinner_value)
-                                top:  Math.max(main.min_spinner_value, main.max_spinner_value)
-                                decimals: main.spinnerDecimals
-                                notation: DoubleValidator.StandardNotation
-                            }
-                            textFromValue: main.spinnerTextFromValue
-                            valueFromText: main.spinnerValueFromText
-                            onValueChanged: nnutty.set_character_world_position(spinnerIntToDecimal(spinBoxX.value), spinnerIntToDecimal(spinBoxY.value), spinnerIntToDecimal(spinBoxZ.value))
-                        }
+                    id: characterSettings
+                    visible: nnutty.get_selected_character_controller_type_value() !== -1
+                    color: "transparent"
+                    Loader {
+                        id: characterSettingsLoader
+                        anchors.fill: parent
+                        source: "character_settings.qml"
                     }
                 }
             }
@@ -186,13 +108,10 @@ ApplicationWindow {
         ColumnLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
-
             Rectangle {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                id: animFileList
                 color: "transparent"
-
                 Loader {
                     id: animFileListLoader
                     anchors.fill: parent
@@ -204,16 +123,14 @@ ApplicationWindow {
         ColumnLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
-
             Rectangle {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                id: controllerControls
+                id: controllerSettings
                 color: "transparent"
-                visible: nnutty.get_selected_character_controller_type_value() !== null
-
+                visible: nnutty.get_selected_character_controller_type_value() !== -1
                 Loader {
-                    id: characterControlsLoader
+                    id: controllerSettingsLoader
                     anchors.fill: parent
                     source: main.getCharacterControlsSource()
                 }
@@ -223,11 +140,11 @@ ApplicationWindow {
         Connections {
             target: nnutty
             function onCharactersModified() {
-                controllerControls.visible = nnutty.get_selected_character_controller_type_value() !== null
-                controllerTypeLabel.text = "Controller Type: " + nnutty.get_selected_character_controller_type_name()
-                characterControlsLoader.source = ""
-                characterControlsLoader.source = main.getCharacterControlsSource()
-                switchShowOrigin.checked = nnutty.get_show_character_origin()
+                console.log(nnutty.get_selected_character_controller_type_value())
+                characterSettings.visible = nnutty.get_selected_character_controller_type_value() !== -1
+                controllerSettings.visible = nnutty.get_selected_character_controller_type_value() !== -1
+                controllerSettingsLoader.source = ""
+                controllerSettingsLoader.source = main.getCharacterControlsSource()
             }
         }
     }

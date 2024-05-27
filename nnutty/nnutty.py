@@ -160,7 +160,7 @@ class NNutty(QtCore.QObject):
 
     @QtCore.Slot(result=int)
     def get_selected_character_controller_type_value(self):
-        if self.selected_character_invalid(): return None
+        if self.selected_character_invalid(): return -1
         return self.get_first_character().controller.ctrl_type.value
     
     @QtCore.Slot(result=str)
