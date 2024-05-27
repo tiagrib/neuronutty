@@ -15,6 +15,8 @@ from fairmotion.utils import utils, constants
 from PIL import Image
 import numpy as np
 
+from nnutty.controllers.character_controller import CharCtrlType
+
 class NNuttyViewer(glut_viewer.Viewer):
     """
     NNuttyViewer is an extension of the glut_viewer.Viewer class that implements
@@ -89,7 +91,7 @@ class NNuttyViewer(glut_viewer.Viewer):
             return False
         return True
 
-    def _render_pose(self, pose, character, color):
+    def _render_pose(self, pose, controller, character, color):
         skel = pose.skel
         for j in skel.joints:
             T = pose.get_transform(j, local=False)
@@ -100,7 +102,10 @@ class NNuttyViewer(glut_viewer.Viewer):
                 pos_parent = conversions.T2p(
                     pose.get_transform(j.parent_joint, local=False)
                 )
-                p = 0.5 * (pos_parent + pos) + character.controller.settings.world_offset
+                p = 0.5 * (pos_parent + pos) + controller.settings.world_offset
+                if controller != character.controller:
+                    p += character.controller.settings.world_offset
+
                 l = np.linalg.norm(pos_parent - pos)
                 r = 0.1 * self.thickness
                 R = math.R_from_vectors(np.array([0, 0, 1]), pos_parent - pos)
@@ -123,18 +128,29 @@ class NNuttyViewer(glut_viewer.Viewer):
             if character.controller.settings.show_origin:
                 gl_render.render_transform(conversions.p2T(character.controller.settings.world_offset), 
                                            use_arrow=True, line_width=self.nnutty.args.thickness)
-
-            pose = character.get_pose()
-            if pose:
-                color = character.controller.settings.color
-                if color is None:
-                    color = colors[i % len(colors)]
-
+                
+            controllers = character.controller
+            poses = character.get_pose()
+            colors = character.get_color()
+            if character.controller.ctrl_type == CharCtrlType.MULTI:
+                controllers = character.controller.get_controllers()    
+            else:
+                poses = [character.get_pose()]
+                colors = [character.get_color()]
+                controllers = [character.controller]
+            
+            if poses and poses[0]:
                 glEnable(GL_LIGHTING)
                 glEnable(GL_DEPTH_TEST)
-
                 glEnable(GL_LIGHTING)
-                self._render_pose(pose, character, color)
+                
+                for i, pose in enumerate(poses):
+                    if pose:
+                        color = colors[i]
+                        if color is None:
+                            color = colors[i % len(colors)]
+                        
+                        self._render_pose(pose, controllers[i], character, color)
 
     def render_callback(self):
         gl_render.render_ground(
@@ -167,7 +183,7 @@ class NNuttyViewer(glut_viewer.Viewer):
             for i, character in self.nnutty.get_characters():
                 ctrl_type = character.controller.ctrl_type
                 gl_render.render_text(
-                    f"Character #{i}: {ctrl_type.name}; t={character.controller.cur_time:.2f}",
+                    f"Character #{i}: {ctrl_type.name}; t={character.controller.get_cur_time():.2f}",
                     pos=[0.05 * w, 0.90 * h - 5*i],
                     font=GLUT_BITMAP_TIMES_ROMAN_24,
                 )

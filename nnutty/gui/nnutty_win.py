@@ -10,7 +10,8 @@ class NNuttyWin():
 
     def __init__(self, nnutty, parent=None):
         self.nnutty = nnutty
-
+        QtCore.QCoreApplication.setOrganizationName("TiagoRibeiro")
+        QtCore.QCoreApplication.setApplicationName("NeuroNutty")
         self.engine = QtQml.QQmlApplicationEngine()
         self.engine.addImportPath(str(Path("nnutty/gui/qml/").resolve()))
 

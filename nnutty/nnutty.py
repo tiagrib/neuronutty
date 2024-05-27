@@ -7,7 +7,7 @@ from threading import Lock
 from PySide6 import QtCore
 
 from nnutty.controllers.character_controller import CharacterSettings
-from nnutty.controllers.fairmotion_torch_model_controller import FairmotionModelController
+from nnutty.controllers.fairmotion_torch_model_controller import FairmotionDualController
 from nnutty.controllers.wave_controller import WaveAnimController
 from nnutty.gui.nnutty_win import NNuttyWin
 from nnutty.viz.nnutty_viewer import NNuttyViewer
@@ -85,96 +85,97 @@ class NNutty(QtCore.QObject):
 
         self.mutex_characters = Lock()
         self.characters = []
+        self.selected_animation = None
 
-    @QtCore.Slot()
-    def add_animfile_character(self):
-        logging.info("add_animfile_character()")
+    def add_character(self, character:Character):
         with self.mutex_characters:
             self.characters.clear()
-            self.characters.append(Character(body_model=BodyModel("stick_figure2"),
-                                             controller=AnimFileController(settings=CharacterSettings(args=self.args))))
-        self.charactersModified.emit() 
+            self.characters.append(character)
+        if self.selected_animation is not None and self.get_first_character().controller.loads_animations():
+            self.set_selected_animation_file(self.selected_animation.parent, self.selected_animation.name)
+        self.charactersModified.emit()
 
-    @QtCore.Slot()
-    def add_fairmotion_model_character(self):
-        logging.info("add_fairmotion_model_character()")
-        with self.mutex_characters:
-            self.characters.clear()
-            model = "C:/repo/DIP/models/test1/best.model"
-            self.characters.append(Character(body_model=BodyModel("stick_figure2"),
-                                             controller=FairmotionModelController(model=model, settings=CharacterSettings(args=self.args))))
-        self.charactersModified.emit() 
-
-    @QtCore.Slot()
-    def add_dip_character(self):
-        logging.info("add_dip_character()")
-        with self.mutex_characters:
-            self.characters.clear()
-            self.characters.append(Character(body_model=BodyModel("stick_figure2"),
-                                             controller=DIPModelController(settings=CharacterSettings(args=self.args))))
-        self.charactersModified.emit() 
-    
-    @QtCore.Slot()
-    def add_nn_character(self, model=None):
-        logging.info("add_nn_character()")
-        with self.mutex_characters:
-            self.characters.clear()
-            self.characters.append(Character(body_model=None,
-                                             controller=NNController(model, 
-                                                                     CharacterSettings(args=self.args))))
-        self.charactersModified.emit() 
-            
-    @QtCore.Slot()
-    def add_wave_character(self, model=None):
-        logging.info("add_wave_character()")
-        with self.mutex_characters:
-            self.characters.clear()
-            self.characters.append(Character(body_model=None,
-                                             controller=WaveAnimController(model, 
-                                                                           CharacterSettings(args=self.args))))
-        self.charactersModified.emit() 
-            
-    @QtCore.Slot(float, float, float)
-    def set_character_world_position(self, x, y, z):
-        logging.info(f"set_character_world_position: [{x}, {y}, {z}]")
-        if self.characters:
-            with self.mutex_characters:
-                self.characters[0].controller.settings.set_world_offset([x, y, z])
-
-    @QtCore.Slot(bool)
-    def show_character_origin(self, show):
-        logging.info(f"show_character_origin: {show}")
-        if self.characters:
-            with self.mutex_characters:
-                self.characters[0].controller.settings.set_show_origin(show)
-
-    @QtCore.Slot(result=bool)
-    def get_show_character_origin(self):
-        if self.characters:
-            with self.mutex_characters:
-                return self.characters[0].controller.settings.show_origin
-        return False
-
-    @QtCore.Slot(result=int)
-    def get_selected_character_controller_type(self):
-        if self.characters:
-            with self.mutex_characters:
-                return self.characters[0].controller.ctrl_type.value
-        return None
-    
-    @QtCore.Slot(int, result=str)
-    def getCharCtrlTypeName(self, value):
-        return str(value)
-    
-    @QtCore.Slot(str, str)
-    def setSelectedAnimationFile(self, folder, filename):
-        self.characters[0].controller.load_anim_file(Path(folder) / filename)
+    def selected_character_invalid(self):
+        return self.characters is None or len(self.characters) == 0
 
     def get_characters(self):
         char_enum = None
         with self.mutex_characters:
             char_enum = enumerate(self.characters)
         return char_enum
+    
+    def get_first_character(self):
+        character = None
+        with self.mutex_characters:
+            character = self.characters[0]
+        return character
+
+    @QtCore.Slot()
+    def add_animfile_character(self):
+        logging.info("add_animfile_character()")
+        self.add_character(Character(body_model=BodyModel("stick_figure2"),
+                                     controller=AnimFileController(settings=CharacterSettings(args=self.args))))
+
+    @QtCore.Slot()
+    def add_fairmotion_model_character(self):
+        logging.info("add_fairmotion_model_character()")
+        model = "C:/repo/DIP/models/test1/best.model"
+        self.add_character(Character(body_model=BodyModel("stick_figure2"),
+                                     controller=FairmotionDualController(model=model, settings=CharacterSettings(args=self.args))))
+
+    @QtCore.Slot()
+    def add_dip_character(self):
+        logging.info("add_dip_character()")
+        self.add_character(Character(body_model=BodyModel("stick_figure2"),
+                                     controller=DIPModelController(settings=CharacterSettings(args=self.args))))
+    
+    @QtCore.Slot()
+    def add_nn_character(self, model=None):
+        logging.info("add_nn_character()")
+        self.add_character(Character(body_model=None,
+                                     controller=NNController(model, CharacterSettings(args=self.args))))
+            
+    @QtCore.Slot()
+    def add_wave_character(self, model=None):
+        logging.info("add_wave_character()")
+        self.add_character(Character(body_model=None,
+                                     controller=WaveAnimController(model, CharacterSettings(args=self.args))))
+
+    @QtCore.Slot(float, float, float)
+    def set_character_world_position(self, x, y, z):
+        if self.selected_character_invalid(): return
+        logging.info(f"set_character_world_position: [{x}, {y}, {z}]")
+        self.get_first_character().controller.settings.set_world_offset([x, y, z])
+
+    @QtCore.Slot(bool)
+    def show_character_origin(self, show):
+        if self.selected_character_invalid(): return
+        logging.info(f"show_character_origin: {show}")
+        self.get_first_character().controller.settings.set_show_origin(show)
+
+    @QtCore.Slot(result=bool)
+    def get_show_character_origin(self):
+        if self.selected_character_invalid(): return False
+        return self.get_first_character().controller.settings.show_origin
+
+    @QtCore.Slot(result=int)
+    def get_selected_character_controller_type_value(self):
+        if self.selected_character_invalid(): return None
+        return self.get_first_character().controller.ctrl_type.value
+    
+    @QtCore.Slot(result=str)
+    def get_selected_character_controller_type_name(self):
+        if self.selected_character_invalid(): return None
+        return self.get_first_character().controller.ctrl_type.name
+    
+    @QtCore.Slot(str, str)
+    def set_selected_animation_file(self, folder, filename):
+        if folder is None or filename is None: 
+            self.selected_animation = None
+        else:
+            self.selected_animation = Path(folder) / filename
+        if self.selected_character_invalid(): return
+        self.get_first_character().controller.load_anim_file(self.selected_animation)
 
     def run(self):
         self.win.show()

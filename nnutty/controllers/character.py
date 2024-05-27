@@ -17,3 +17,6 @@ class Character():
 
     def get_pose(self):
         return self.controller.get_pose()
+
+    def get_color(self):
+        return self.controller.get_color()

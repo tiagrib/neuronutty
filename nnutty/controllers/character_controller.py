@@ -13,6 +13,7 @@ class CharCtrlType(Enum):
     MODEL = 2
     WAVE = 3
     DIP = 4
+    MULTI = 5
 
     def __str__(self):
         return self.name
@@ -40,6 +41,10 @@ class CharCtrlTypeWrapper(QtCore.QObject):
     @QtCore.Property(int, constant=True)
     def DIP(self):
         return CharCtrlType.DIP.value
+    
+    @QtCore.Property(int, constant=True)
+    def MULTI(self):
+        return CharCtrlType.MULTI.value
 
 class CharacterSettings():
     def __init__(self, v_up=None, v_front=None, scale=None, args=None):
@@ -54,6 +59,17 @@ class CharacterSettings():
         self.world_offset = [0.0, 0.0, 0.0]
         self.show_origin = True
         self.color = np.array([85, 160, 173, 255]) / 255.0  # blue
+
+    @classmethod
+    def copy(cls, existing):
+        new_settings = cls()
+        new_settings.v_up = existing.v_up
+        new_settings.v_front = existing.v_front
+        new_settings.scale = existing.scale
+        new_settings.world_offset = existing.world_offset.copy()
+        new_settings.show_origin = existing.show_origin
+        new_settings.color = existing.color.copy()
+        return new_settings
 
     def set_world_offset(self, offset):
         self.world_offset = offset
@@ -71,6 +87,9 @@ class CharacterController():
         else:
             self.settings = settings
 
+    def loads_animations(self):
+        return False
+
     def reset(self):
         pass
 
@@ -82,3 +101,10 @@ class CharacterController():
     
     def get_settings(self):
         return CharacterSettings()
+    
+    def get_cur_time(self):
+        return 0.0
+    
+    def get_color(self):
+        return self.settings.color
+    

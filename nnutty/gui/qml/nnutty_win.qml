@@ -37,11 +37,11 @@ ApplicationWindow {
     }
 
     function getCharacterControlsSource() {
-        switch (nnutty.get_selected_character_controller_type()) {
+        switch (nnutty.get_selected_character_controller_type_value()) {
             case CharCtrlType.ANIM_FILE:
                 return "char_ctrl_anim_file.qml";
             case CharCtrlType.MODEL:
-                return "char_ctrl_anim_file.qml";
+                return "char_ctrl_nn.qml";
             case CharCtrlType.WAVE:
                 return "char_ctrl_wave.qml";
             case CharCtrlType.DIP:
@@ -92,7 +92,7 @@ ApplicationWindow {
                 Layout.fillHeight: true
                 id: characterControls
                 title: "Character Controls"
-                visible: nnutty.get_selected_character_controller_type() !== null
+                visible: nnutty.get_selected_character_controller_type_value() !== null
 
                 ColumnLayout {
                     Layout.fillWidth: true
@@ -190,9 +190,27 @@ ApplicationWindow {
             Rectangle {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
+                id: animFileList
+                color: "transparent"
+
+                Loader {
+                    id: animFileListLoader
+                    anchors.fill: parent
+                    source: "anim_file_list.qml"
+                }
+            }
+        }
+
+        ColumnLayout {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
                 id: controllerControls
                 color: "transparent"
-                visible: nnutty.get_selected_character_controller_type() !== null
+                visible: nnutty.get_selected_character_controller_type_value() !== null
 
                 Loader {
                     id: characterControlsLoader
@@ -205,8 +223,8 @@ ApplicationWindow {
         Connections {
             target: nnutty
             function onCharactersModified() {
-                controllerControls.visible = nnutty.get_selected_character_controller_type() !== null
-                controllerTypeLabel.text = "Controller Type: " + nnutty.getCharCtrlTypeName(nnutty.get_selected_character_controller_type())
+                controllerControls.visible = nnutty.get_selected_character_controller_type_value() !== null
+                controllerTypeLabel.text = "Controller Type: " + nnutty.get_selected_character_controller_type_name()
                 characterControlsLoader.source = ""
                 characterControlsLoader.source = main.getCharacterControlsSource()
                 switchShowOrigin.checked = nnutty.get_show_character_origin()

@@ -5,11 +5,32 @@ import torch
 import numpy as np
 from nnutty.controllers.anim_file_controller import AnimFileController
 from nnutty.controllers.character_controller import CharCtrlType, CharacterSettings
+from nnutty.controllers.dual_anim_controller import DualAnimController
 from nnutty.controllers.uncached_anim_controller import UncachedAnimController
 from fairmotion.tasks.motion_prediction import generate, utils
 from fairmotion.core.motion import Pose
 from fairmotion.ops import conversions
 
+
+class FairmotionDualController(DualAnimController):
+    def __init__(self, model, settings:CharacterSettings = None):
+        super().__init__(ctrl1=FairmotionModelController(model, settings=CharacterSettings.copy(settings)),
+                         ctrl2=AnimFileController(settings=CharacterSettings.copy(settings)),
+                         settings=settings)
+        
+    def loads_animations(self):
+        return True
+        
+    def load_model(self, model_path:str):
+        self.ctrl1.load_model(model_path)
+
+    def load_anim_file(self, filename:str):
+        self.ctrl1.load_anim_file(filename)
+        self.ctrl2.load_anim_file(filename)
+        self.reset()
+
+    def get_cur_time(self):
+        return self.ctrl1.cur_time
 
 class FairmotionModelController(UncachedAnimController):
     def __init__(self, model, settings:CharacterSettings = None):
