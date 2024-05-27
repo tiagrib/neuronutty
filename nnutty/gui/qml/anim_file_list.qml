@@ -1,6 +1,7 @@
 // char_ctrl_anim_file.qml
 import QtQuick 2.15
 import QtQuick.Controls 2.15
+import QtQuick.Controls.Material 2.15
 import Qt.labs.folderlistmodel 2.1
 import Qt.labs.platform 1.1
 import QtCore
@@ -10,6 +11,7 @@ GroupBox {
     anchors.fill: parent
     id: grpCtrlAnimFile
     title: "AnimFile Controller"
+    Material.theme: Material.Dark
 
     Settings {
         id: appSettings
@@ -52,6 +54,7 @@ GroupBox {
                 id: listView
                 property int hovered_index: -1
                 anchors.fill: parent
+                clip: true
                 model: FileTreeModel {
                     id: folderModel
                     folder: pathField.text

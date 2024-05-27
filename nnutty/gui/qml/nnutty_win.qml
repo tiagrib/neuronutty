@@ -54,10 +54,10 @@ ApplicationWindow {
     RowLayout {
         anchors.fill: parent
         ColumnLayout {
-            Layout.fillWidth: true
+            Layout.fillWidth: false
             Layout.fillHeight: true
-            Layout.minimumWidth: 200
-            Layout.maximumWidth: 500
+            Layout.minimumWidth: 150
+            Layout.maximumWidth: 400
             GroupBox {
                 Layout.fillWidth: true
                 Layout.fillHeight: false
