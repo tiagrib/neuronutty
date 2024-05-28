@@ -12,7 +12,7 @@ from nnutty.controllers.wave_controller import WaveAnimController
 from nnutty.gui.nnutty_win import NNuttyWin
 from nnutty.gui.viz.nnutty_viewer import NNuttyViewer
 from nnutty.controllers.character import BodyModel, Character
-from nnutty.controllers.anim_file_controller import AnimFileController
+from nnutty.controllers.anim_file_controller import AnimFileController, DualAnimFileController
 from nnutty.controllers.nn_controller import NNController
 from nnutty.controllers.dip_controller import DIPModelController
 
@@ -23,8 +23,8 @@ def parse_args():
     parser.add_argument("--speed", type=float, default=1.0)
     parser.add_argument("--axis-up", type=str, choices=["x", "y", "z"], default="y")
     parser.add_argument("--axis-face", type=str, choices=["x", "y", "z"], default="z")
-    parser.add_argument("--camera-position", nargs="+", type=float, required=False, default=(0.0, 15.0, 20.0))
-    parser.add_argument("--camera-origin", nargs="+", type=float, required=False, default=(0, 5.0, 0.0))
+    parser.add_argument("--camera-position", nargs="+", type=float, required=False, default=(0.0, 5.0, 20.0))
+    parser.add_argument("--camera-origin", nargs="+", type=float, required=False, default=(0, 0.0, 0.0))
     parser.add_argument("--hide-origin", action="store_false")
     parser.add_argument("--render-overlay", action="store_false")
     args = parser.parse_args()
@@ -79,8 +79,8 @@ class NNutty(QtCore.QObject):
         print("Multithreading with maximum %d threads" % self.threadpool.maxThreadCount())
         self.win = NNuttyWin(self)
 
-        self.args.scale = 0.05
-        self.args.thickness = 5.0
+        self.args.scale = 1.0
+        self.args.thickness = 1.0
         self.viewer = NNuttyViewer(self)
 
         self.mutex_characters = Lock()
@@ -115,6 +115,12 @@ class NNutty(QtCore.QObject):
         logging.info("add_animfile_character()")
         self.add_character(Character(body_model=BodyModel("stick_figure2"),
                                      controller=AnimFileController(settings=CharacterSettings(args=self.args))))
+        
+    @QtCore.Slot()
+    def add_dual_animfile_character(self):
+        logging.info("add_dual_animfile_character()")
+        self.add_character(Character(body_model=BodyModel("stick_figure2"),
+                                     controller=DualAnimFileController(settings=CharacterSettings(args=self.args))))
 
     @QtCore.Slot()
     def add_fairmotion_model_character(self):
@@ -168,14 +174,15 @@ class NNutty(QtCore.QObject):
         if self.selected_character_invalid(): return None
         return self.get_first_character().controller.ctrl_type.name
     
-    @QtCore.Slot(str, str)
-    def set_selected_animation_file(self, folder, filename):
+    @QtCore.Slot(str, str, int)
+    def set_selected_animation_file(self, folder, filename, controller_idx=0):
         if folder is None or filename is None: 
             self.selected_animation = None
         else:
             self.selected_animation = Path(folder) / filename
-        if self.selected_character_invalid(): return
-        self.get_first_character().controller.load_anim_file(self.selected_animation)
+        if (self.selected_character_invalid() or 
+            not self.get_first_character().controller.loads_animations()): return
+        self.get_first_character().controller.load_anim_file(self.selected_animation, controller_idx)
 
     def run(self):
         self.win.show()

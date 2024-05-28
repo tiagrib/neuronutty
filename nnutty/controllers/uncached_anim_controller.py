@@ -22,3 +22,6 @@ class UncachedAnimController(CharacterController):
 
     def get_pose(self):
         return self.pose
+    
+    def get_cur_time(self):
+        return self.cur_time

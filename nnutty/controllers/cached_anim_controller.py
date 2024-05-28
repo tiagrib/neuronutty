@@ -48,3 +48,6 @@ class CachedAnimController(CharacterController):
             return None
         pose = self.motion.get_pose_by_time(self.cur_time)
         return pose
+    
+    def get_cur_time(self):
+        return self.cur_time

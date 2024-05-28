@@ -2,18 +2,14 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Controls.Material 2.15
-import Qt.labs.folderlistmodel 2.1
-import Qt.labs.platform 1.1
-import QtCore
-import NNutty 1.0
 
 GroupBox {
     anchors.fill: parent
-    id: grpCtrlAnimFile
-    title: "AnimFile Controller"
+    id: grpCtrlAnimFile2
+    title: "Dual AnimFile Controller"
     Material.theme: Material.Dark
-
-    property int selected_controller: 0
+    
+    property int selected_controller: 1
 
     Settings {
         id: appSettings
@@ -97,4 +93,5 @@ GroupBox {
         }
         
     }
+
 }

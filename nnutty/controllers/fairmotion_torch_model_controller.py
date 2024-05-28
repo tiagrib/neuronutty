@@ -24,13 +24,11 @@ class FairmotionDualController(DualAnimController):
     def load_model(self, model_path:str):
         self.ctrl1.load_model(model_path)
 
-    def load_anim_file(self, filename:str):
+    def load_anim_file(self, filename:str, controller_index=0):
         self.ctrl1.load_anim_file(filename)
         self.ctrl2.load_anim_file(filename)
         self.reset()
 
-    def get_cur_time(self):
-        return self.ctrl1.cur_time
 
 class FairmotionModelController(UncachedAnimController):
     def __init__(self, model, settings:CharacterSettings = None):
@@ -73,7 +71,7 @@ class FairmotionModelController(UncachedAnimController):
         self.model.load_state_dict(torch.load(model_path, map_location=self.device))
         self.model.eval()
 
-    def load_anim_file(self, filename:str):
+    def load_anim_file(self, filename:str, controller_index=0):
         anim_file_ctrl = AnimFileController(settings=self.settings)
         anim_file_ctrl.load_anim_file(filename)
         self.full_anim_length = anim_file_ctrl.end_time

@@ -40,6 +40,8 @@ ApplicationWindow {
         switch (nnutty.get_selected_character_controller_type_value()) {
             case CharCtrlType.ANIM_FILE:
                 return "char_ctrl_anim_file.qml";
+            case CharCtrlType.DUAL_ANIM_FILE:
+                return "char_ctrl_dual_anim_file.qml";
             case CharCtrlType.MODEL:
                 return "char_ctrl_nn.qml";
             case CharCtrlType.WAVE:
@@ -68,6 +70,10 @@ ApplicationWindow {
                     Button {
                         text: "AnimFile Character"
                         onClicked: nnutty.add_animfile_character()
+                    }
+                    Button {
+                        text: "Dual AnimFile Character"
+                        onClicked: nnutty.add_dual_animfile_character()
                     }
                     Button {
                         text: "Fairmotion Model Character"

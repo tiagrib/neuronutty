@@ -3,7 +3,7 @@ from nnutty.controllers.character_controller import CharCtrlType, CharacterContr
 class DualAnimController(CharacterController):
     def __init__(self, ctrl1:CharacterController, ctrl2:CharacterController,
                  settings:CharacterSettings = None):
-        super().__init__(ctrl_type=CharCtrlType.MULTI, settings=settings)
+        super().__init__(ctrl_type=CharCtrlType.DUAL_ANIM_FILE, settings=settings)
         self.control_count = 2
         self.ctrl1 = ctrl1
         self.ctrl2 = ctrl2
@@ -30,3 +30,6 @@ class DualAnimController(CharacterController):
     
     def get_controllers(self):
         return [self.ctrl1, self.ctrl2]
+    
+    def get_cur_time(self):
+        return self.ctrl1.cur_time

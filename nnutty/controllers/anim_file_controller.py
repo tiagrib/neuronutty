@@ -4,7 +4,25 @@ import logging
 from fairmotion.data import bvh, asfamc, amass_dip
 
 from nnutty.controllers.cached_anim_controller import CachedAnimController
+from nnutty.controllers.dual_anim_controller import DualAnimController
 from nnutty.controllers.character_controller import CharCtrlType, CharacterSettings
+
+class DualAnimFileController(DualAnimController):
+    def __init__(self, settings:CharacterSettings = None):
+        super().__init__(ctrl1=AnimFileController(settings=CharacterSettings.copy(settings)),
+                         ctrl2=AnimFileController(settings=CharacterSettings.copy(settings)),
+                         settings=settings)
+        
+    def loads_animations(self):
+        return True
+
+    def load_anim_file(self, filename:str, controller_index=0):
+        if controller_index == 0:
+            self.ctrl1.load_anim_file(filename)
+        else:
+            self.ctrl2.load_anim_file(filename)
+        self.reset()
+
 
 class AnimFileController(CachedAnimController):
     def __init__(self,
@@ -14,7 +32,7 @@ class AnimFileController(CachedAnimController):
         self.load_anim_file(filename)
         
 
-    def load_anim_file(self, filename:str):
+    def load_anim_file(self, filename:str, controller_index=0):
         motion = None
         if filename:
             if not isinstance(filename, list):

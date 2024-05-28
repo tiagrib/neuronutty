@@ -46,7 +46,7 @@ class NNuttyViewer(glut_viewer.Viewer):
         super().__init__(title="NeuroNutty Viewer",
                          size=(1280, 720),
                          cam=self.cam)
-        
+
     def run(self, **kwargs):
         import pydevd;
         pydevd.settrace(suspend=False)
@@ -96,13 +96,14 @@ class NNuttyViewer(glut_viewer.Viewer):
         for j in skel.joints:
             T = pose.get_transform(j, local=False)
             pos = conversions.T2p(T)
-            gl_render.render_point(pos, radius=0.03 * self.scale, color=color)
+            gl_render.render_point(pos + controller.settings.world_offset, radius=0.03 * self.thickness, color=color)
             if j.parent_joint is not None:
                 # returns X that X dot vec1 = vec2
                 pos_parent = conversions.T2p(
                     pose.get_transform(j.parent_joint, local=False)
                 )
                 p = 0.5 * (pos_parent + pos) + controller.settings.world_offset
+                #p *= controller.settings.scale
                 if controller != character.controller:
                     p += character.controller.settings.world_offset
 
@@ -112,7 +113,7 @@ class NNuttyViewer(glut_viewer.Viewer):
                 gl_render.render_capsule(
                     conversions.Rp2T(R, p),
                     l,
-                    r * self.scale,
+                    r,
                     color=color,
                     slice=8,
                 )
@@ -128,11 +129,11 @@ class NNuttyViewer(glut_viewer.Viewer):
             if character.controller.settings.show_origin:
                 gl_render.render_transform(conversions.p2T(character.controller.settings.world_offset), 
                                            use_arrow=True, line_width=self.nnutty.args.thickness)
-                
+
             controllers = character.controller
             poses = character.get_pose()
             colors = character.get_color()
-            if character.controller.ctrl_type == CharCtrlType.MULTI:
+            if character.controller.ctrl_type in [CharCtrlType.MULTI , CharCtrlType.DUAL_ANIM_FILE]:
                 controllers = character.controller.get_controllers()    
             else:
                 poses = [character.get_pose()]
@@ -194,5 +195,3 @@ class NNuttyViewer(glut_viewer.Viewer):
             self.rec_gif_images.append(
                 image.convert("P", palette=Image.ADAPTIVE)
             )
-        
-        
