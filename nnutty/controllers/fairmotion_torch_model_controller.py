@@ -5,28 +5,29 @@ import torch
 import numpy as np
 from nnutty.controllers.anim_file_controller import AnimFileController
 from nnutty.controllers.character_controller import CharCtrlType, CharacterSettings
-from nnutty.controllers.dual_anim_controller import DualAnimController
+from nnutty.controllers.multi_anim_controller import MultiAnimController
 from nnutty.controllers.uncached_anim_controller import UncachedAnimController
 from fairmotion.tasks.motion_prediction import generate, utils
 from fairmotion.core.motion import Pose
 from fairmotion.ops import conversions
 
 
-class FairmotionDualController(DualAnimController):
+class FairmotionDualController(MultiAnimController):
     def __init__(self, model, settings:CharacterSettings = None):
-        super().__init__(ctrl1=FairmotionModelController(model, settings=CharacterSettings.copy(settings)),
-                         ctrl2=AnimFileController(settings=CharacterSettings.copy(settings)),
+        super().__init__(ctrls=[FairmotionModelController(model, settings=CharacterSettings.copy(settings)),
+                                AnimFileController(settings=CharacterSettings.copy(settings))],
                          settings=settings)
+        self.ctrl_type = CharCtrlType.DUAL_ANIM_FILE
         
     def loads_animations(self):
         return True
         
     def load_model(self, model_path:str):
-        self.ctrl1.load_model(model_path)
+        self.ctrls[0].load_model(model_path)
 
     def load_anim_file(self, filename:str, controller_index=0):
-        self.ctrl1.load_anim_file(filename)
-        self.ctrl2.load_anim_file(filename)
+        for ctrl in self.ctrls:
+            ctrl.load_anim_file(filename)
         self.reset()
 
 

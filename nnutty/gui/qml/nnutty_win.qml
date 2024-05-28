@@ -4,6 +4,7 @@ import QtQuick.Controls.Material 2.15
 import QtQuick.Layouts 2.15
 import Qt.labs.folderlistmodel 2.1
 import Qt.labs.platform 1.1
+import QtCore
 
 ApplicationWindow {
     id: main
@@ -51,6 +52,12 @@ ApplicationWindow {
             default:
                 return "";
         }
+    }
+
+    Settings {
+        id: appSettings
+        property string selected_folder: ""
+        property string selected_folder_2: ""
     }
 
     RowLayout {
@@ -119,16 +126,11 @@ ApplicationWindow {
                 Layout.fillHeight: true
                 color: "transparent"
                 Loader {
-                    id: animFileListLoader
+                    id: animFilePanelLoader
                     anchors.fill: parent
-                    source: "anim_file_list.qml"
+                    source: "anim_file_panel.qml"
                 }
             }
-        }
-
-        ColumnLayout {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
             Rectangle {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
@@ -151,6 +153,8 @@ ApplicationWindow {
                 controllerSettings.visible = nnutty.get_selected_character_controller_type_value() !== -1
                 controllerSettingsLoader.source = ""
                 controllerSettingsLoader.source = main.getCharacterControlsSource()
+                animFilePanelLoader.source = ""
+                animFilePanelLoader.source = nnutty.get_selected_character_controller_type_value() === CharCtrlType.DUAL_ANIM_FILE ? "dual_anim_file_panel.qml" : "anim_file_panel.qml"
             }
         }
     }

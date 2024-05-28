@@ -15,11 +15,6 @@ GroupBox {
 
     property int selected_controller: 0
 
-    Settings {
-        id: appSettings
-        property string selected_folder: ""
-    }
-
     ColumnLayout {
         id: colLayout
         anchors.fill: parent

@@ -87,6 +87,7 @@ class CharacterController():
                  ctrl_type: CharCtrlType = CharCtrlType.UNKNOWN, 
                  settings:CharacterSettings = None):
         self.ctrl_type = ctrl_type
+        self.control_count = 1
         if settings is None:
             self.settings = CharacterSettings()
         else:

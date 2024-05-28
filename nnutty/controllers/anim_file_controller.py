@@ -4,23 +4,22 @@ import logging
 from fairmotion.data import bvh, asfamc, amass_dip
 
 from nnutty.controllers.cached_anim_controller import CachedAnimController
-from nnutty.controllers.dual_anim_controller import DualAnimController
+from nnutty.controllers.multi_anim_controller import MultiAnimController
 from nnutty.controllers.character_controller import CharCtrlType, CharacterSettings
 
-class DualAnimFileController(DualAnimController):
+class DualAnimFileController(MultiAnimController):
     def __init__(self, settings:CharacterSettings = None):
-        super().__init__(ctrl1=AnimFileController(settings=CharacterSettings.copy(settings)),
-                         ctrl2=AnimFileController(settings=CharacterSettings.copy(settings)),
+        super().__init__(ctrls=[AnimFileController(settings=CharacterSettings.copy(settings)),
+                                AnimFileController(settings=CharacterSettings.copy(settings))],
                          settings=settings)
+        self.ctrl_type = CharCtrlType.DUAL_ANIM_FILE
         
     def loads_animations(self):
         return True
 
     def load_anim_file(self, filename:str, controller_index=0):
-        if controller_index == 0:
-            self.ctrl1.load_anim_file(filename)
-        else:
-            self.ctrl2.load_anim_file(filename)
+        assert(controller_index < len(self.ctrls))
+        self.ctrls[controller_index].load_anim_file(filename)
         self.reset()
 
 

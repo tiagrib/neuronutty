@@ -11,11 +11,6 @@ GroupBox {
     
     property int selected_controller: 1
 
-    Settings {
-        id: appSettings
-        property string selected_folder: ""
-    }
-
     ColumnLayout {
         id: colLayout
         anchors.fill: parent
@@ -24,10 +19,10 @@ GroupBox {
             id: pathField
             Layout.fillWidth: true
             placeholderText: "DIP/Synthetic_60FPS folder location"
-            text: appSettings.selected_folder 
+            text: appSettings.selected_folder_2
             readOnly: true
 
-            onTextChanged: appSettings.selected_folder = text
+            onTextChanged: appSettings.selected_folder_2 = text
 
             MouseArea {
                 anchors.fill: parent
