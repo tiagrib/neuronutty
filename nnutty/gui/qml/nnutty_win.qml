@@ -38,17 +38,17 @@ ApplicationWindow {
     }
 
     function getCharacterControlsSource() {
-        switch (nnutty.get_selected_character_controller_type_value()) {
-            case CharCtrlType.ANIM_FILE:
-                return "char_ctrl_anim_file.qml";
-            case CharCtrlType.DUAL_ANIM_FILE:
-                return "char_ctrl_dual_anim_file.qml";
-            case CharCtrlType.MODEL:
-                return "char_ctrl_nn.qml";
-            case CharCtrlType.WAVE:
-                return "char_ctrl_wave.qml";
-            case CharCtrlType.DIP:
+        switch (nnutty.get_selected_character_controller_name()) {
+            case "FairmotionDualController":
+                return "char_ctrl_fairmotion_model.qml";
+            case "AnimFileController":
+            case "DualAnimFileController":
+                return "char_ctrl_animfile.qml";
+            case "DIPController":
                 return "char_ctrl_dip.qml";
+            case "WaveController":
+                return "char_ctrl_wave.qml";
+
             default:
                 return "";
         }
@@ -107,7 +107,7 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     id: characterSettings
-                    visible: nnutty.get_selected_character_controller_type_value() !== -1
+                    visible: nnutty.get_selected_character_controller_name() !== ""
                     color: "transparent"
                     Loader {
                         id: characterSettingsLoader
@@ -136,7 +136,7 @@ ApplicationWindow {
                 Layout.fillHeight: true
                 id: controllerSettings
                 color: "transparent"
-                visible: nnutty.get_selected_character_controller_type_value() !== -1
+                visible: nnutty.get_selected_character_controller_name() !== ""
                 Loader {
                     id: controllerSettingsLoader
                     anchors.fill: parent
@@ -148,13 +148,12 @@ ApplicationWindow {
         Connections {
             target: nnutty
             function onCharactersModified() {
-                console.log(nnutty.get_selected_character_controller_type_value())
-                characterSettings.visible = nnutty.get_selected_character_controller_type_value() !== -1
-                controllerSettings.visible = nnutty.get_selected_character_controller_type_value() !== -1
+                characterSettings.visible = nnutty.get_selected_character_controller_name() !== ""
+                controllerSettings.visible = nnutty.get_selected_character_controller_name() !== ""
                 controllerSettingsLoader.source = ""
                 controllerSettingsLoader.source = main.getCharacterControlsSource()
                 animFilePanelLoader.source = ""
-                animFilePanelLoader.source = nnutty.get_selected_character_controller_type_value() === CharCtrlType.DUAL_ANIM_FILE ? "dual_anim_file_panel.qml" : "anim_file_panel.qml"
+                animFilePanelLoader.source = ["DualAnimFileController"].indexOf(nnutty.get_selected_character_controller_name()) !== -1 ? "dual_anim_file_panel.qml" : "anim_file_panel.qml"
             }
         }
     }

@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import torch
 import numpy as np
+import matplotlib.pyplot as plt
 from nnutty.controllers.anim_file_controller import AnimFileController
 from nnutty.controllers.character_controller import CharCtrlType, CharacterSettings
 from nnutty.controllers.multi_anim_controller import MultiAnimController
@@ -18,18 +19,31 @@ class FairmotionDualController(MultiAnimController):
                                 AnimFileController(settings=CharacterSettings.copy(settings))],
                          settings=settings)
         self.ctrl_type = CharCtrlType.DUAL_ANIM_FILE
+        self.model_ctrl = self.ctrls[0]
         
     def loads_animations(self):
         return True
         
     def load_model(self, model_path:str):
-        self.ctrls[0].load_model(model_path)
+        self.model_ctrl.load_model(model_path)
 
     def load_anim_file(self, filename:str, controller_index=0):
         for ctrl in self.ctrls:
             ctrl.load_anim_file(filename)
         self.reset()
 
+    def set_prediction_ratio(self, ratio):
+        self.model_ctrl.set_prediction_ratio(ratio)
+        self.reset()
+
+    def get_prediction_ratio(self):
+        return self.model_ctrl.get_prediction_ratio()
+    
+    def get_plot_data(self, index):
+        x = np.random.rand(5)+index
+        y = np.random.rand(5)+index
+        return (x, y)
+    
 
 class FairmotionModelController(UncachedAnimController):
     def __init__(self, model, settings:CharacterSettings = None):
@@ -38,11 +52,11 @@ class FairmotionModelController(UncachedAnimController):
         self.in_prediction = False
         self.computed_poses = []
         self.fps = 1.0
+        self.prediction_ratio = 0.9
         self.load_model(model_path=model)
 
     def load_model(self, model_path:str):
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.num_predictions = 90
         self.num_dim = 72
         hidden_dim = 1024
         num_layers = 1
@@ -73,23 +87,25 @@ class FairmotionModelController(UncachedAnimController):
         self.model.eval()
 
     def load_anim_file(self, filename:str, controller_index=0):
-        anim_file_ctrl = AnimFileController(settings=self.settings)
-        anim_file_ctrl.load_anim_file(filename)
-        self.full_anim_length = anim_file_ctrl.end_time
+        self.anim_file_ctrl = AnimFileController(settings=self.settings)
+        self.anim_file_ctrl.load_anim_file(filename)
+        self.full_anim_length = self.anim_file_ctrl.end_time
         self.reference_anim_length = self.full_anim_length
-        self.fps = anim_file_ctrl.fps
-        self.recompute_prediction(anim_file_ctrl)
+        self.fps = self.anim_file_ctrl.fps
+        self.recompute_prediction(self.anim_file_ctrl)
 
     def recompute_prediction(self, anim_file_ctrl):
-        logging.info("Running model")
-        self.reference_anim_length -= self.num_predictions/anim_file_ctrl.fps
-        self.num_ref_frames = anim_file_ctrl.motion.num_frames() - self.num_predictions
+        num_predictions = int(self.prediction_ratio * anim_file_ctrl.motion.num_frames())
+        logging.info(f"Running model for {num_predictions} frames...")
+        
+        self.reference_anim_length = self.full_anim_length - num_predictions/anim_file_ctrl.fps
+        self.num_ref_frames = anim_file_ctrl.motion.num_frames() - num_predictions
         input_motion = anim_file_ctrl.motion.rotations()[:self.num_ref_frames]
         input_motion = conversions.R2A(input_motion[:,:,:])
         input_motion = input_motion.reshape(1, -1, self.num_dim)
         input_motion = torch.from_numpy(input_motion)
         pred_seq = (
-            generate.generate(self.model, input_motion, self.num_predictions, self.device)
+            generate.generate(self.model, input_motion, num_predictions, self.device)
             .to(device="cpu")
             .numpy()
         )
@@ -97,11 +113,17 @@ class FairmotionModelController(UncachedAnimController):
         self.computed_poses.clear()
         for i in range(self.num_ref_frames):
             self.computed_poses.append(anim_file_ctrl.motion.get_pose_by_frame(i))
-        for i in range(self.num_predictions):
+        for i in range(num_predictions):
             poses = conversions.A2T(pred_seq[0].reshape(pred_seq[0].shape[0], pred_seq[0].shape[1] // 3, 3))
             self.computed_poses.append(Pose(anim_file_ctrl.motion.skel, poses[i]))
         self.reset()
 
+    def set_prediction_ratio(self, ratio):
+        self.prediction_ratio = ratio
+        self.recompute_prediction(self.anim_file_ctrl)
+
+    def get_prediction_ratio(self):
+        return self.prediction_ratio
 
     def reset(self):
         super().reset()

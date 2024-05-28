@@ -36,6 +36,12 @@ GroupBox {
                     folderModel.folder = pathField.text;
                 }
             }
+
+            Component.onCompleted: {
+                if (appSettings.selected_folder_2 !== "") {
+                    folderModel.folder = appSettings.selected_folder_2;
+                }
+            }
         }
 
         ScrollView {

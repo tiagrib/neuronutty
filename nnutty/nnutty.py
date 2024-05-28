@@ -3,8 +3,10 @@ import sys
 import argparse
 import logging
 from threading import Lock
+import matplotlib.pyplot as plt
 
 from PySide6 import QtCore
+
 
 from nnutty.controllers.character_controller import CharacterSettings
 from nnutty.controllers.fairmotion_torch_model_controller import FairmotionDualController
@@ -64,6 +66,8 @@ class Worker(QtCore.QRunnable):
 
 class NNutty(QtCore.QObject):
     charactersModified = QtCore.Signal()
+    plot1Updated = QtCore.Signal()
+    plot2Updated = QtCore.Signal()
 
     def __init__(self, app):
         super().__init__()
@@ -125,7 +129,7 @@ class NNutty(QtCore.QObject):
     @QtCore.Slot()
     def add_fairmotion_model_character(self):
         logging.info("add_fairmotion_model_character()")
-        model = "C:/repo/DIP/models/test1/best.model"
+        model = "C:/repo/DIP/models/test2/best.model"
         self.add_character(Character(body_model=BodyModel("stick_figure2"),
                                      controller=FairmotionDualController(model=model, settings=CharacterSettings(args=self.args))))
 
@@ -147,6 +151,7 @@ class NNutty(QtCore.QObject):
         self.add_character(Character(body_model=None,
                                      controller=WaveAnimController(model, CharacterSettings(args=self.args))))
 
+
     @QtCore.Slot(float, float, float)
     def set_character_world_position(self, x, y, z):
         if self.selected_character_invalid(): return
@@ -164,14 +169,14 @@ class NNutty(QtCore.QObject):
         if self.selected_character_invalid(): return False
         return self.get_first_character().controller.settings.show_origin
 
-    @QtCore.Slot(result=int)
-    def get_selected_character_controller_type_value(self):
-        if self.selected_character_invalid(): return -1
-        return self.get_first_character().controller.ctrl_type.value
+    @QtCore.Slot(result=str)
+    def get_selected_character_controller_name(self):
+        if self.selected_character_invalid(): return ""
+        return type(self.get_first_character().controller).__name__
     
     @QtCore.Slot(result=str)
     def get_selected_character_controller_type_name(self):
-        if self.selected_character_invalid(): return None
+        if self.selected_character_invalid(): return ""
         return self.get_first_character().controller.ctrl_type.name
     
     @QtCore.Slot(str, str, int)
@@ -183,6 +188,29 @@ class NNutty(QtCore.QObject):
         if (self.selected_character_invalid() or 
             not self.get_first_character().controller.loads_animations()): return
         self.get_first_character().controller.load_anim_file(self.selected_animation, controller_idx)
+        self.plot1Updated.emit()
+        self.plot2Updated.emit()
+
+    @QtCore.Slot(float)
+    def set_fairmotion_model_prediction_ratio(self, ratio=0.9):
+        if self.selected_character_invalid(): return
+        assert(type(self.get_first_character().controller) == FairmotionDualController)
+        self.get_first_character().controller.set_prediction_ratio(ratio)
+        self.plot2Updated.emit()
+
+    @QtCore.Slot(result=float)
+    def get_fairmotion_model_prediction_ratio(self):
+        if self.selected_character_invalid(): return
+        assert(type(self.get_first_character().controller) == FairmotionDualController)
+        return self.get_first_character().controller.get_prediction_ratio()
+    
+    def get_plot_data(self, index=0):
+        if self.selected_character_invalid(): return
+        assert(type(self.get_first_character().controller) == FairmotionDualController)
+        if index >= 0 and index <= 1:
+            return self.get_first_character().controller.get_plot_data(index)
+        else:
+            return None
 
     def run(self):
         self.win.show()
