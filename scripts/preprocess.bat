@@ -1,0 +1,1 @@
+ps.exe -NoProfile -File "preprocess.ps1"
