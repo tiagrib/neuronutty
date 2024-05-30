@@ -129,7 +129,7 @@ class NNutty(QtCore.QObject):
     @QtCore.Slot()
     def add_fairmotion_model_character(self):
         logging.info("add_fairmotion_model_character()")
-        model = "data/models/seq2seq_full/best.model"
+        model = "Z:/models/AMASS_full_seq2seq/best.model"
         self.add_character(Character(body_model=BodyModel("stick_figure2"),
                                      controller=FairmotionDualController(model=model, settings=CharacterSettings(args=self.args))))
 
