@@ -129,7 +129,7 @@ class NNutty(QtCore.QObject):
     @QtCore.Slot()
     def add_fairmotion_model_character(self):
         logging.info("add_fairmotion_model_character()")
-        model = "C:/repo/DIP/models/test2/best.model"
+        model = "data/models/seq2seq_full/best.model"
         self.add_character(Character(body_model=BodyModel("stick_figure2"),
                                      controller=FairmotionDualController(model=model, settings=CharacterSettings(args=self.args))))
 
@@ -188,15 +188,17 @@ class NNutty(QtCore.QObject):
         if (self.selected_character_invalid() or 
             not self.get_first_character().controller.loads_animations()): return
         self.get_first_character().controller.load_anim_file(self.selected_animation, controller_idx)
-        self.plot1Updated.emit()
-        self.plot2Updated.emit()
+        if controller_idx == 0:
+            self.plot1Updated.emit()
+        if controller_idx == 1 or type(self.get_first_character().controller) == FairmotionDualController:
+            self.plot2Updated.emit()
 
     @QtCore.Slot(float)
     def set_fairmotion_model_prediction_ratio(self, ratio=0.9):
         if self.selected_character_invalid(): return
         assert(type(self.get_first_character().controller) == FairmotionDualController)
         self.get_first_character().controller.set_prediction_ratio(ratio)
-        self.plot2Updated.emit()
+        self.plot1Updated.emit()
 
     @QtCore.Slot(result=float)
     def get_fairmotion_model_prediction_ratio(self):
@@ -206,11 +208,7 @@ class NNutty(QtCore.QObject):
     
     def get_plot_data(self, index=0):
         if self.selected_character_invalid(): return
-        assert(type(self.get_first_character().controller) == FairmotionDualController)
-        if index >= 0 and index <= 1:
-            return self.get_first_character().controller.get_plot_data(index)
-        else:
-            return None
+        return self.get_first_character().controller.get_plot_data(index)
 
     def run(self):
         self.win.show()

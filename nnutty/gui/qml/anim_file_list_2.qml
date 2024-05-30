@@ -6,7 +6,7 @@ import QtQuick.Controls.Material 2.15
 GroupBox {
     anchors.fill: parent
     id: grpCtrlAnimFile2
-    title: "Dual AnimFile Controller"
+    title: "Animation File (Dual) Selector"
     Material.theme: Material.Dark
     
     property int selected_controller: 1

@@ -1,5 +1,7 @@
 from PySide6 import QtCore, QtQuick, QtGui, QtWidgets
 import matplotlib
+
+from nnutty.util.plot_data import PlotData
 matplotlib.use('Qt5Agg')
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
@@ -11,24 +13,33 @@ class MplCanvas(FigureCanvasQTAgg):
         self.axes = self.fig.add_subplot(111)
         super().__init__(self.fig)
 
-    def get_figure_data(self, source, index=0):
-        if isinstance(source, QtCore.QObject):
-            source = source.get_plot_data(index)
-        if source is None:
+    def get_figure_data(self, nnutty, index=0):
+        width, height = self.fig.bbox.size
+        if width == 0 or height == 0:
             return None, 0, 0
         
-        x_values, y_values = source
+        pdata = nnutty.get_plot_data(index)
+        if pdata is None:
+            return None, 0, 0
+
+        assert(isinstance(pdata, PlotData))        
         self.axes.clear()
-        self.axes.plot(x_values, y_values)
+        if pdata.num_frames == 0 or pdata.num_plots == 0:
+            return None, 0, 0
+        
+        for i in range(pdata.num_plots):
+            lbl = None if pdata.labels is None else pdata.labels[i]
+            self.axes.plot(pdata.x_values, pdata.y_values[i], label=lbl)
+
         self.fig.canvas.draw()
-        width, height = self.fig.bbox.size
+        
         buf = io.BytesIO()
         # save figure to buffer
         self.fig.savefig(buf, format='png')
         buf.seek(0) 
         data = buf.read()
         buf.close()
-        return data, width, height
+        return data, int(width), int(height)
 
 
 class MatplotlibItem(QtQuick.QQuickPaintedItem):
@@ -73,8 +84,13 @@ class MatplotlibItem(QtQuick.QQuickPaintedItem):
     def paint(self, painter):
         painter.drawPixmap(0, 0, self._pixmap)
 
-    @QtCore.Slot(QtCore.QObject, int)
-    def update_figure(self, source, index=0):
+    @QtCore.Slot(QtCore.QObject, int, int, int)
+    def update_figure(self, source, index=0, target_width=None, target_height=None):
+        if target_width is not None:
+            self.setDisplayWidth(target_width)
+        if target_height is not None:
+            self.setDisplayHeight(target_height)
+
         buf, width, height = self.mpl.get_figure_data(source, index)
         if buf is None:
             return

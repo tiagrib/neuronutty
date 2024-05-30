@@ -1,6 +1,7 @@
 from nnutty.controllers.character_controller import CharCtrlType, CharacterController, CharacterSettings
 from fairmotion.core.motion import Motion
 from fairmotion.ops import conversions
+from nnutty.util.plot_data import get_plot_data_from_poses
 
 class CachedAnimController(CharacterController):
     def __init__(self, 
@@ -51,3 +52,13 @@ class CachedAnimController(CharacterController):
     
     def get_cur_time(self):
         return self.cur_time
+
+    def get_plot_data(self):
+        if self.motion is None:
+            return None
+        
+        poses = [self.motion.get_pose_by_frame(f) for f in range(self.motion.num_frames())]
+
+        return get_plot_data_from_poses(self.motion.skel, poses)
+
+    

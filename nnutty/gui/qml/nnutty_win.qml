@@ -8,11 +8,11 @@ import QtCore
 
 ApplicationWindow {
     id: main
-    width: 1024
-    height: 768
+    width: 1200
+    height: 900
     visible: true
-    minimumWidth: 400
-    minimumHeight: 400
+    minimumWidth: 600
+    minimumHeight: 800
     title: qsTr("NeuroNutty")
     Material.theme: Material.Dark
 
@@ -43,7 +43,7 @@ ApplicationWindow {
                 return "char_ctrl_fairmotion_model.qml";
             case "AnimFileController":
             case "DualAnimFileController":
-                return "char_ctrl_animfile.qml";
+                return "char_ctrl_anim_file.qml";
             case "DIPController":
                 return "char_ctrl_dip.qml";
             case "WaveController":
@@ -124,6 +124,8 @@ ApplicationWindow {
             Rectangle {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
+                Layout.preferredHeight: parent.height * 0.4
+                Layout.maximumHeight: 400
                 color: "transparent"
                 Loader {
                     id: animFilePanelLoader
@@ -134,6 +136,8 @@ ApplicationWindow {
             Rectangle {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
+                Layout.preferredHeight: parent.height * 0.6
+                Layout.minimumHeight: 400
                 id: controllerSettings
                 color: "transparent"
                 visible: nnutty.get_selected_character_controller_name() !== ""

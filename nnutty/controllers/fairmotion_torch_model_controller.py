@@ -11,6 +11,8 @@ from nnutty.controllers.uncached_anim_controller import UncachedAnimController
 from fairmotion.tasks.motion_prediction import generate, utils
 from fairmotion.core.motion import Pose
 from fairmotion.ops import conversions
+from nnutty.util.plot_data import PlotData, get_plot_data_from_poses
+from nnutty.util import amass_mean_std
 
 
 class FairmotionDualController(MultiAnimController):
@@ -40,9 +42,7 @@ class FairmotionDualController(MultiAnimController):
         return self.model_ctrl.get_prediction_ratio()
     
     def get_plot_data(self, index):
-        x = np.random.rand(5)+index
-        y = np.random.rand(5)+index
-        return (x, y)
+        return self.ctrls[index].get_plot_data()
     
 
 class FairmotionModelController(UncachedAnimController):
@@ -53,7 +53,16 @@ class FairmotionModelController(UncachedAnimController):
         self.computed_poses = []
         self.fps = 1.0
         self.prediction_ratio = 0.9
+        self.anim_file_ctrl = None
         self.load_model(model_path=model)
+
+    def get_plot_data(self):
+        if self.anim_file_ctrl is None or self.anim_file_ctrl.motion is None:
+            return None
+        
+        poses = self.computed_poses
+
+        return get_plot_data_from_poses(self.anim_file_ctrl.motion.skel, poses)
 
     def load_model(self, model_path:str):
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -95,6 +104,9 @@ class FairmotionModelController(UncachedAnimController):
         self.recompute_prediction(self.anim_file_ctrl)
 
     def recompute_prediction(self, anim_file_ctrl):
+        if anim_file_ctrl is None or anim_file_ctrl.motion is None:
+            return
+        
         num_predictions = int(self.prediction_ratio * anim_file_ctrl.motion.num_frames())
         logging.info(f"Running model for {num_predictions} frames...")
         

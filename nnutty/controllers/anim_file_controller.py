@@ -53,3 +53,4 @@ class AnimFileController(CachedAnimController):
         if motion:
             self.digest_fairmotion(motion)
             logging.info(f"Loaded animation file: '{filename}'")
+

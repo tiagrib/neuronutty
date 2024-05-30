@@ -10,7 +10,7 @@ import NNutty 1.0
 GroupBox {
     anchors.fill: parent
     id: grpCtrlAnimFile
-    title: "AnimFile Controller"
+    title: "Animation File Selector"
     Material.theme: Material.Dark
 
     property int selected_controller: 0

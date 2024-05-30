@@ -95,6 +95,9 @@ class CharacterController():
 
     def loads_animations(self):
         return False
+    
+    def get_plot_data(self, index=0):
+        return None
 
     def reset(self):
         pass

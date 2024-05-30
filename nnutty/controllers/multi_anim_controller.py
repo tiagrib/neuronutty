@@ -35,3 +35,6 @@ class MultiAnimController(CharacterController):
     
     def get_cur_time(self):
         return self.ctrls[0].cur_time
+    
+    def get_plot_data(self, index):
+        return self.ctrls[index].get_plot_data()
