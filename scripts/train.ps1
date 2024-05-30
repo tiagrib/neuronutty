@@ -1,7 +1,7 @@
 $elements = Get-ChildItem -Path "Z:\preprocessed" -Directory | ForEach-Object { $_.Name }
 $architectures = "seq2seq","transformer","transformer_encoder"
 foreach ($elem in $elements) {
-    foreach ($architecture in $elements) {
+    foreach ($architecture in $architectures) {
         $saveModelPath = "Z:\models\${elem}_${architecture}"
         $preprocessedPath = "Z:\preprocessed\$elem\aa"
         if (-not (Test-Path $saveModelPath)) {
