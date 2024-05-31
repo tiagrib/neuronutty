@@ -8,9 +8,9 @@ from nnutty.controllers.anim_file_controller import AnimFileController
 from nnutty.controllers.character_controller import CharCtrlType, CharacterSettings
 from nnutty.controllers.multi_anim_controller import MultiAnimController
 from nnutty.controllers.uncached_anim_controller import UncachedAnimController
-from fairmotion.tasks.motion_prediction import generate, utils
-from fairmotion.core.motion import Pose
-from fairmotion.ops import conversions
+from thirdparty.fairmotion.tasks.motion_prediction import generate, utils
+from thirdparty.fairmotion.core.motion import Pose
+from thirdparty.fairmotion.ops import conversions
 from nnutty.util.plot_data import PlotData, get_plot_data_from_poses
 from nnutty.util import amass_mean_std
 

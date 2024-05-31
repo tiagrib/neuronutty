@@ -1,5 +1,5 @@
 from enum import Enum
-from fairmotion.utils import utils
+from thirdparty.fairmotion.utils import utils
 from PySide6 import QtCore
 import numpy as np
 

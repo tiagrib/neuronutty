@@ -32,8 +32,6 @@ def checkPyTorchCUDA():
 
 def _post_install():
     print('POST INSTALL')
-    print("Installing Fairmotion...")
-    run_pip("install", "--no-deps", "-e", "git+https://github.com/facebookresearch/fairmotion.git@e400e564deac93bb74ffecd9c366d76b3406e217#egg=fairmotion")
     
     print("PyTorch CUDA Check:", checkPyTorchCUDA())
     if not checkPyTorchCUDA():

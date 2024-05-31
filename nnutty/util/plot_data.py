@@ -1,5 +1,5 @@
 
-from fairmotion.ops import conversions
+from thirdparty.fairmotion.ops import conversions
 
 class PlotData:
     def __init__(self, x_values, y_values, labels=None):
