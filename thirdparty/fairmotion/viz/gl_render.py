@@ -395,15 +395,15 @@ def render_ground_texture(
     nx = int(lx / dx) + 1
     nz = int(lz / dz) + 1
 
-    if axis is "x":
+    if axis == "x":
         raise NotImplementedError
-    elif axis is "y":
+    elif axis == "y":
         up_vec = np.array([0.0, 1.0, 0.0])
         p1 = np.array([-0.5 * size[0], 0, -0.5 * size[0]])
         p2 = np.array([0.5 * size[0], 0, -0.5 * size[0]])
         p3 = np.array([0.5 * size[0], 0, 0.5 * size[0]])
         p4 = np.array([-0.5 * size[0], 0, 0.5 * size[0]])
-    elif axis is "z":
+    elif axis == "z":
         up_vec = np.array([0.0, 0.0, 1.0])
         p1 = np.array([-0.5 * size[0], -0.5 * size[0], 0])
         p2 = np.array([0.5 * size[0], -0.5 * size[0], 0])
@@ -432,7 +432,7 @@ def render_ground_texture(
         glDisable(GL_LIGHTING)
         glPushMatrix()
         glTranslatef(offset[0], offset[1], offset[2])
-        if axis is "y":
+        if axis == "y":
             glRotated(-90.0, 1, 0, 0)
         render_disk(
             constants.eye_T(),
@@ -572,7 +572,7 @@ def render_ground(
     if lighting:
         glEnable(GL_LIGHTING)
 
-    if axis is "x":
+    if axis == "x":
         for i in np.linspace(-0.5 * lx, 0.5 * lx, nx):
             glBegin(GL_LINES)
             glVertex3d(0, i, -0.5 * lz)
@@ -583,7 +583,7 @@ def render_ground(
             glVertex3d(0, -0.5 * lx, i)
             glVertex3d(0, 0.5 * lx, i)
             glEnd()
-    elif axis is "y":
+    elif axis == "y":
         for i in np.linspace(-0.5 * lx, 0.5 * lx, nx):
             glBegin(GL_LINES)
             glVertex3d(i, 0, -0.5 * lz)
@@ -594,7 +594,7 @@ def render_ground(
             glVertex3d(-0.5 * lx, 0, i)
             glVertex3d(0.5 * lx, 0, i)
             glEnd()
-    elif axis is "z":
+    elif axis == "z":
         for i in np.linspace(-0.5 * lx, 0.5 * lx, nx):
             glBegin(GL_LINES)
             glVertex3d(i, -0.5 * lz, 0)
