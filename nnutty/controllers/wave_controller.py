@@ -4,9 +4,9 @@ import numpy as np
 from nnutty.controllers.character_controller import CharCtrlType, CharacterSettings
 from nnutty.controllers.uncached_anim_controller import UncachedAnimController
 
-from thirdparty.fairmotion.core import motion as motion_classes
-from thirdparty.fairmotion.ops import conversions
-from thirdparty.fairmotion.utils import constants
+from fairmotion.core import motion as motion_classes
+from fairmotion.ops import conversions
+from fairmotion.utils import constants
 
 def AAx2T(angle):
     return conversions.R2T(conversions.Ax2R(angle))

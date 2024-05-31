@@ -17,7 +17,7 @@ foreach ($dataset in $datasets) {
         $saveOutputPath = "Z:\generated\${model}"
         $preprocessedPath = "Z:\preprocessed\$dataset\aa"
         if (-not (Test-Path $saveOutputPath)) {
-            & $python -m thirdparty.fairmotion.tasks.motion_prediction.test --preprocessed-path $preprocessedPath --save-model-path $saveModelPath --save-output-path $saveOutputPath --architecture $architecture
+            & $python -m fairmotion.tasks.motion_prediction.test --preprocessed-path $preprocessedPath --save-model-path $saveModelPath --save-output-path $saveOutputPath --architecture $architecture
         } else {
             Write-Host "Skipped existing model '$saveModelPath'."
         }

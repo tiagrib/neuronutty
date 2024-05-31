@@ -1,6 +1,6 @@
 from nnutty.controllers.character_controller import CharCtrlType, CharacterController, CharacterSettings
-from thirdparty.fairmotion.core.motion import Motion
-from thirdparty.fairmotion.ops import conversions
+from fairmotion.core.motion import Motion
+from fairmotion.ops import conversions
 from nnutty.util.plot_data import get_plot_data_from_poses
 
 class CachedAnimController(CharacterController):

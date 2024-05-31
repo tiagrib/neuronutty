@@ -18,7 +18,7 @@ foreach ($elem in $elements) {
         Write-Host "Save model path: $saveModelPath"
         Write-Host "Preprocessing Path: $preprocessedPath"
         if (-not (Test-Path $saveModelPath)) {
-            & $python -m thirdparty.fairmotion.tasks.motion_prediction.training --save-model-path $saveModelPath --preprocessed-path $preprocessedPath --epochs 100 --device cuda --save-model-frequency 5 --architecture $architecture
+            & $python -m fairmotion.tasks.motion_prediction.training --save-model-path $saveModelPath --preprocessed-path $preprocessedPath --epochs 100 --device cuda --save-model-frequency 5 --architecture $architecture
         } else {
             Write-Host "Skipped existing model '$saveModelPath'."
         }

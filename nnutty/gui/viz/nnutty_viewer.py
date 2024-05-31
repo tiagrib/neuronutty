@@ -6,9 +6,9 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
 
-from thirdparty.fairmotion.viz import camera, gl_render, glut_viewer
-from thirdparty.fairmotion.ops import conversions, math
-from thirdparty.fairmotion.utils import utils, constants
+from fairmotion.viz import camera, gl_render, glut_viewer
+from fairmotion.ops import conversions, math
+from fairmotion.utils import utils, constants
 
 
 

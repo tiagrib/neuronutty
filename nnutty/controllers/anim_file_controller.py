@@ -1,7 +1,7 @@
 from enum import Enum
 import logging
 
-from thirdparty.fairmotion.data import bvh, asfamc, amass_dip
+from fairmotion.data import bvh, asfamc, amass_dip
 
 from nnutty.controllers.cached_anim_controller import CachedAnimController
 from nnutty.controllers.multi_anim_controller import MultiAnimController

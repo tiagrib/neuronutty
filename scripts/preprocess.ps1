@@ -22,7 +22,7 @@ foreach ($elem in $elements) {
     $outputDir = "Z:\preprocessed\${elem}"    
     Write-Host "Output directory: $outputDir"
     if (-not (Test-Path $outputDir)) {
-        & $python -m thirdparty.fairmotion.tasks.motion_prediction.preprocess --input-dir $inputDir --output-dir $outputDir --split-dir $splitDir --rep aa
+        & $python -m fairmotion.tasks.motion_prediction.preprocess --input-dir $inputDir --output-dir $outputDir --split-dir $splitDir --rep aa
     } else {
         Write-Host "Skipped existing preprocessed dataset '$inputDir'."
     }
