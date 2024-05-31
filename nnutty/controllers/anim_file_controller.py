@@ -36,12 +36,7 @@ class AnimFileController(CachedAnimController):
         if filename:
             if not isinstance(filename, list):
                 if filename.suffix.lower() == ".bvh":
-                    motion = bvh.load(
-                        file=filename,
-                        v_up_skel=self.settings.v_up,
-                        v_face_skel=self.settings.v_front,
-                        v_up_env=self.settings.v_up,
-                        scale=self.settings.scale)
+                    motion = bvh.load(file=filename)
                 elif filename.suffix.lower() == ".pkl":
                     motion = amass_dip.load(filename)
                     motion.name = filename.name

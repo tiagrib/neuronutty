@@ -59,7 +59,7 @@ GroupBox {
         Row {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            Label { text: "X:" }
+            Label { text: "Y:" }
             SpinBox {
                 id: spinBoxY
                 value: 0.0
@@ -82,7 +82,7 @@ GroupBox {
         Row {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            Label { text: "X:" }
+            Label { text: "Z:" }
             SpinBox {
                 id: spinBoxZ
                 value: 0.0
@@ -100,6 +100,29 @@ GroupBox {
                 textFromValue: main.spinnerTextFromValue
                 valueFromText: main.spinnerValueFromText
                 onValueChanged: nnutty.set_character_world_position(spinnerIntToDecimal(spinBoxX.value), spinnerIntToDecimal(spinBoxY.value), spinnerIntToDecimal(spinBoxZ.value))
+            }
+        }
+        Row {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            Label { text: "Scale:" }
+            SpinBox {
+                id: spinBoxScale
+                value: 100.0
+                from: main.min_spinner_value
+                to: main.max_spinner_value
+                stepSize: 10
+                editable: true
+                property real realValue: value / main.spinnerDecimalFactor
+                validator: DoubleValidator {
+                    bottom: Math.min(main.min_spinner_value, main.max_spinner_value)
+                    top:  Math.max(main.min_spinner_value, main.max_spinner_value)
+                    decimals: main.spinnerDecimals
+                    notation: DoubleValidator.StandardNotation
+                }
+                textFromValue: main.spinnerTextFromValue
+                valueFromText: main.spinnerValueFromText
+                onValueChanged: nnutty.set_character_scale(spinnerIntToDecimal(spinBoxScale.value))
             }
         }
     }

@@ -158,6 +158,13 @@ class NNutty(QtCore.QObject):
         logging.info(f"set_character_world_position: [{x}, {y}, {z}]")
         self.get_first_character().controller.settings.set_world_offset([x, y, z])
 
+    @QtCore.Slot(float)
+    def set_character_scale(self, s):
+        if self.selected_character_invalid(): return
+        logging.info(f"set_character_scale: {s}")
+        self.get_first_character().controller.settings.set_scale(s)
+
+
     @QtCore.Slot(bool)
     def show_character_origin(self, show):
         if self.selected_character_invalid(): return

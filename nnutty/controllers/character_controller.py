@@ -82,6 +82,9 @@ class CharacterSettings():
     def set_show_origin(self, show_origin):
         self.show_origin = show_origin
 
+    def set_scale(self, scale):
+        self.scale = scale
+
 class CharacterController():
     def __init__(self, 
                  ctrl_type: CharCtrlType = CharCtrlType.UNKNOWN, 
