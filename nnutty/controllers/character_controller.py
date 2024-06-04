@@ -87,8 +87,10 @@ class CharacterSettings():
 
 class CharacterController():
     def __init__(self, 
+                 nnutty,
                  ctrl_type: CharCtrlType = CharCtrlType.UNKNOWN, 
                  settings:CharacterSettings = None):
+        self.nnutty = nnutty
         self.ctrl_type = ctrl_type
         self.control_count = 1
         if settings is None:
@@ -97,6 +99,9 @@ class CharacterController():
             self.settings = settings
 
     def loads_animations(self):
+        return False
+    
+    def loads_folders(self):
         return False
     
     def get_plot_data(self, index=0):

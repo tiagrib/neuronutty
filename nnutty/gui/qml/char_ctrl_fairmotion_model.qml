@@ -16,6 +16,10 @@ GroupBox {
         anchors.fill: parent
 
         RowLayout {
+            Button {
+                text: "Restart Playback"
+                onClicked: nnutty.reset_playback()
+            }
             Label {
                 text: "Generation ratio (%):"
                 Layout.fillWidth: false

@@ -1,9 +1,10 @@
 from nnutty.controllers.character_controller import CharCtrlType, CharacterController, CharacterSettings
 
 class MultiAnimController(CharacterController):
-    def __init__(self, ctrls:list,
+    def __init__(self, nnutty, 
+                 ctrls:list,
                  settings:CharacterSettings = None):
-        super().__init__(ctrl_type=CharCtrlType.MULTI, settings=settings)
+        super().__init__(nnutty, ctrl_type=CharCtrlType.MULTI, settings=settings)
         assert(len(ctrls) != 0)
         assert(all([isinstance(ctrl, CharacterController) for ctrl in ctrls]))
         

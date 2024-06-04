@@ -5,9 +5,10 @@ from nnutty.util.plot_data import get_plot_data_from_poses
 
 class CachedAnimController(CharacterController):
     def __init__(self, 
+                 nnutty, 
                  ctrl_type:CharCtrlType = CharCtrlType.UNKNOWN,
                  settings:CharacterSettings = None):
-        super().__init__(ctrl_type=ctrl_type, settings=settings)
+        super().__init__(nnutty, ctrl_type=ctrl_type, settings=settings)
         self.cur_time = 0.0
         self.end_time = 0.0
         self.fps = 1.0

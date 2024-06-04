@@ -90,15 +90,20 @@ class NNutty(QtCore.QObject):
         self.mutex_characters = Lock()
         self.characters = []
         self.selected_animation = None
+        self.selected_folder = None
         self._skip_reload_animation = False
+        self._skip_selected_folder_reload = False
 
     def add_character(self, character:Character):
         with self.mutex_characters:
             self.characters.clear()
             self.characters.append(character)
+        if self.selected_folder is not None and self.get_first_character().controller.loads_folders():
+            self.set_selected_folder(self.selected_folder)
+            self._skip_selected_folder_reload = True
         if self.selected_animation is not None and self.get_first_character().controller.loads_animations():
             self.set_selected_animation_file(self.selected_animation.parent, self.selected_animation.name, update_plots=True)
-        self._skip_reload_animation = True
+            self._skip_reload_animation = True
         self.charactersModified.emit()
 
     def selected_character_invalid(self):
@@ -120,38 +125,37 @@ class NNutty(QtCore.QObject):
     def add_animfile_character(self):
         logging.info("add_animfile_character()")
         self.add_character(Character(body_model=BodyModel("stick_figure2"),
-                                     controller=AnimFileController(settings=CharacterSettings(args=self.args))))
+                                     controller=AnimFileController(self, settings=CharacterSettings(args=self.args))))
         
     @QtCore.Slot()
     def add_dual_animfile_character(self):
         logging.info("add_dual_animfile_character()")
         self.add_character(Character(body_model=BodyModel("stick_figure2"),
-                                     controller=DualAnimFileController(settings=CharacterSettings(args=self.args))))
+                                     controller=DualAnimFileController(self, settings=CharacterSettings(args=self.args))))
 
     @QtCore.Slot()
     def add_fairmotion_model_character(self):
         logging.info("add_fairmotion_model_character()")
-        model = "Z:/models/AMASS_full_seq2seq/best.model"
         self.add_character(Character(body_model=BodyModel("stick_figure2"),
-                                     controller=FairmotionDualController(model=model, settings=CharacterSettings(args=self.args))))
+                                     controller=FairmotionDualController(self, settings=CharacterSettings(args=self.args))))
 
     @QtCore.Slot()
     def add_dip_character(self):
         logging.info("add_dip_character()")
         self.add_character(Character(body_model=BodyModel("stick_figure2"),
-                                     controller=DIPModelController(settings=CharacterSettings(args=self.args))))
+                                     controller=DIPModelController(self, settings=CharacterSettings(args=self.args))))
     
     @QtCore.Slot()
     def add_nn_character(self, model=None):
         logging.info("add_nn_character()")
         self.add_character(Character(body_model=None,
-                                     controller=NNController(model, CharacterSettings(args=self.args))))
+                                     controller=NNController(self, model, CharacterSettings(args=self.args))))
             
     @QtCore.Slot()
     def add_wave_character(self, model=None):
         logging.info("add_wave_character()")
         self.add_character(Character(body_model=None,
-                                     controller=WaveAnimController(model, CharacterSettings(args=self.args))))
+                                     controller=WaveAnimController(self, model, CharacterSettings(args=self.args))))
 
 
     @QtCore.Slot(float, float, float)
@@ -199,11 +203,19 @@ class NNutty(QtCore.QObject):
             self.selected_animation = Path(folder) / filename
         if (self.selected_character_invalid() or 
             not self.get_first_character().controller.loads_animations()): return
-        self.get_first_character().controller.load_anim_file(self.selected_animation, controller_idx)
-        if update_plots or controller_idx == 0:
-            self.plot1Updated.emit()
-        if update_plots or controller_idx == 1 or type(self.get_first_character().controller) == FairmotionDualController:
-            self.plot2Updated.emit()
+        self.get_first_character().controller.load_anim_file(self.selected_animation, 
+                                                             controller_index=controller_idx, 
+                                                             update_plots=update_plots)
+
+    @QtCore.Slot(str, int)
+    def set_selected_folder(self, folder, controller_idx=0):
+        if self._skip_selected_folder_reload:
+            self._skip_selected_folder_reload = False
+            return
+        self.selected_folder = Path(folder)
+        if (self.selected_character_invalid() or 
+            not self.get_first_character().controller.loads_folders()): return
+        self.get_first_character().controller.load_model(self.selected_folder)
 
     @QtCore.Slot(float)
     def set_fairmotion_model_prediction_ratio(self, ratio=0.9):
@@ -221,6 +233,13 @@ class NNutty(QtCore.QObject):
     @QtCore.Slot(result=str)
     def get_supported_animation_files_extensions(self):
         return "*.pkl,*.bvh,*.npz"
+    
+    @QtCore.Slot()
+    def reset_playback(self):
+        if self.selected_character_invalid(): return
+        assert(type(self.get_first_character().controller) == FairmotionDualController)
+        return self.get_first_character().controller.reset()
+        
     
     def get_plot_data(self, index=0):
         if self.selected_character_invalid(): return

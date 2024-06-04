@@ -48,8 +48,6 @@ class NNuttyViewer(glut_viewer.Viewer):
                          cam=self.cam)
 
     def run(self, **kwargs):
-        import pydevd;
-        pydevd.settrace(suspend=False)
         glut_viewer.Viewer.run(self, **kwargs)
 
     def destroy(self):

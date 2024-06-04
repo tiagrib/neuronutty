@@ -2,17 +2,13 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Controls.Material 2.15
-import Qt.labs.folderlistmodel 2.1
-import Qt.labs.platform 1.1
-import QtCore
-import NNutty 1.0
 
 GroupBox {
     anchors.fill: parent
-    id: grpCtrlAnimFile
-    title: "Animation File Selector"
+    id: grpCtrlFolderSelector
+    title: "Folder Selection"
     Material.theme: Material.Dark
-
+    
     property int selected_controller: 0
 
     ColumnLayout {
@@ -22,11 +18,11 @@ GroupBox {
         TextField {
             id: pathField
             Layout.fillWidth: true
-            placeholderText: "DIP/Synthetic_60FPS folder location"
-            text: appSettings.selected_anim_files_path 
+            placeholderText: "Select a folder"
+            text: appSettings.selected_folder_path
             readOnly: true
 
-            onTextChanged: appSettings.selected_anim_files_path = text
+            onTextChanged: appSettings.selected_folder_path = text
 
             MouseArea {
                 anchors.fill: parent
@@ -38,6 +34,12 @@ GroupBox {
                 onAccepted: {
                     pathField.text = folderDialog.folder.toString().replace("file:///", "");
                     folderModel.folder = pathField.text;
+                }
+            }
+
+            Component.onCompleted: {
+                if (appSettings.selected_folder_path !== "") {
+                    folderModel.folder = appSettings.selected_folder_path;
                 }
             }
         }
@@ -52,10 +54,10 @@ GroupBox {
                 property int hovered_index: -1
                 anchors.fill: parent
                 clip: true
-                model: FileTreeModel {
+                model: FolderTreeModel {
                     id: folderModel
                     folder: pathField.text
-                    filter: nnutty.get_supported_animation_files_extensions()
+                    filter: ""
                 }
 
                 delegate: Item {
@@ -87,7 +89,7 @@ GroupBox {
                     }
                 }
 
-                onCurrentIndexChanged: nnutty.set_selected_animation_file(folderModel.folder, model.getItemData(listView.currentIndex), selected_controller)
+                onCurrentIndexChanged: nnutty.set_selected_folder(folderModel.folder + "/" + model.getItemData(listView.currentIndex), selected_controller)
             }
         }
 
@@ -95,8 +97,8 @@ GroupBox {
             Layout.fillWidth: true
 
             Button {
-                text: "Reload"
-                onClicked: nnutty.set_selected_animation_file(folderModel.folder, listView.model.getItemData(listView.currentIndex), selected_controller)
+                text: "Refresh"
+                onClicked: nnutty.set_selected_folder(folderModel.folder + "/" + listView.model.getItemData(listView.currentIndex), selected_controller)
             }
         }
         

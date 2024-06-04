@@ -19,10 +19,10 @@ GroupBox {
             id: pathField
             Layout.fillWidth: true
             placeholderText: "DIP/Synthetic_60FPS folder location"
-            text: appSettings.selected_folder_2
+            text: appSettings.selected_anim_files_path_2
             readOnly: true
 
-            onTextChanged: appSettings.selected_folder_2 = text
+            onTextChanged: appSettings.selected_anim_files_path_2 = text
 
             MouseArea {
                 anchors.fill: parent
@@ -38,8 +38,8 @@ GroupBox {
             }
 
             Component.onCompleted: {
-                if (appSettings.selected_folder_2 !== "") {
-                    folderModel.folder = appSettings.selected_folder_2;
+                if (appSettings.selected_anim_files_path_2 !== "") {
+                    folderModel.folder = appSettings.selected_anim_files_path_2;
                 }
             }
         }
@@ -103,5 +103,4 @@ GroupBox {
         }
         
     }
-
 }

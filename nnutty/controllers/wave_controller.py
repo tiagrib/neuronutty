@@ -50,13 +50,14 @@ def CreateLinearSkelPose(skel, angles):
 
 class WaveAnimController(UncachedAnimController):
     def __init__(self, 
+                 nnutty, 
                  channel_name:str = "output",
                  settings:CharacterSettings = None,
                  offset:np.ndarray = np.array([0.0, 10.0, 0.0]),
                  amplitude:float = np.pi,
                  phase:float = 0.0,
                  frequency:float = 1.0):
-        super().__init__(ctrl_type=CharCtrlType.WAVE, settings=settings)
+        super().__init__(nnutty, ctrl_type=CharCtrlType.WAVE, settings=settings)
         self.output_name = channel_name
         self.output_value = 0.0
         self.amplitude = amplitude

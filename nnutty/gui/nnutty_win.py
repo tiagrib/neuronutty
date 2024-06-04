@@ -3,6 +3,7 @@ from PySide6 import QtCore, QtWidgets, QtQml
 
 from nnutty.controllers.character_controller import CharCtrlTypeWrapper
 from nnutty.gui.file_tree_model import FileTreeModel
+from nnutty.gui.folder_tree_model import FolderTreeModel
 from nnutty.gui.matplotlib_item import MatplotlibItem
 
 ICON_PATH = "resources\\app.ico"
@@ -22,6 +23,7 @@ class NNuttyWin():
         context.setContextProperty("CharCtrlType", self.charCtrlTypeWrapper)
 
         QtQml.qmlRegisterType(FileTreeModel, 'NNutty', 1, 0, 'FileTreeModel')
+        QtQml.qmlRegisterType(FolderTreeModel, 'NNutty', 1, 0, 'FolderTreeModel')
         QtQml.qmlRegisterType(MatplotlibItem, 'Matplotlib', 1, 0, 'MatplotlibItem')
 
         self.component = QtQml.QQmlComponent(self.engine)

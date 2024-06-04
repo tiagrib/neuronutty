@@ -56,8 +56,9 @@ ApplicationWindow {
 
     Settings {
         id: appSettings
-        property string selected_folder: ""
-        property string selected_folder_2: ""
+        property string selected_anim_files_path: ""
+        property string selected_anim_files_path_2: ""
+        property string selected_folder_path: ""
     }
 
     RowLayout {
@@ -130,7 +131,7 @@ ApplicationWindow {
                 Loader {
                     id: animFilePanelLoader
                     anchors.fill: parent
-                    source: "anim_file_panel.qml"
+                    source: ""
                 }
             }
             Rectangle {
@@ -157,7 +158,13 @@ ApplicationWindow {
                 controllerSettingsLoader.source = ""
                 controllerSettingsLoader.source = main.getCharacterControlsSource()
                 animFilePanelLoader.source = ""
-                animFilePanelLoader.source = ["DualAnimFileController"].indexOf(nnutty.get_selected_character_controller_name()) !== -1 ? "dual_anim_file_panel.qml" : "anim_file_panel.qml"
+                if (nnutty.get_selected_character_controller_name() === "DualAnimFileController") {
+                    animFilePanelLoader.source = "dual_anim_file_panel.qml"
+                } else if (nnutty.get_selected_character_controller_name() === "FairmotionDualController") {
+                    animFilePanelLoader.source = "char_ctrl_fairmotion_top_panel.qml"
+                } else if (nnutty.get_selected_character_controller_name() === "AnimFileController") {
+                    animFilePanelLoader.source = "anim_file_panel.qml"
+                }
             }
         }
     }
