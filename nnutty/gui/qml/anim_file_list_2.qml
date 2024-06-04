@@ -57,7 +57,7 @@ GroupBox {
                 model: FileTreeModel {
                     id: folderModel
                     folder: pathField.text
-                    filter: "*.pkl,*.bvh"
+                    filter: nnutty.get_supported_animation_files_extensions()
                 }
 
                 delegate: Item {
@@ -90,6 +90,15 @@ GroupBox {
                 }
 
                 onCurrentIndexChanged: nnutty.set_selected_animation_file(folderModel.folder, model.getItemData(listView.currentIndex), selected_controller)
+            }
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
+
+            Button {
+                text: "Reload"
+                onClicked: nnutty.set_selected_animation_file(folderModel.folder, listView.model.getItemData(listView.currentIndex), selected_controller)
             }
         }
         

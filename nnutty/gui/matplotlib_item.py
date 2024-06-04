@@ -53,6 +53,10 @@ class MatplotlibItem(QtQuick.QQuickPaintedItem):
         self._pixmap = QtGui.QPixmap()
         self.mpl = MplCanvas(self, width=5, height=3, dpi=MatplotlibItem.dpi)
         self.resize_mpl()
+        self.setDisplayWidth(self._width)
+        self.setDisplayHeight(self._height)
+        self.setWidth(self._width)
+        self.setHeight(self._height)
         #self.update_figure(([0,1,2,3,4], [10,1,20,3,40]))
 
     def getDisplayWidth(self):

@@ -17,8 +17,9 @@ from nnutty.util import amass_mean_std
 
 class FairmotionDualController(MultiAnimController):
     def __init__(self, model, settings:CharacterSettings = None):
-        super().__init__(ctrls=[FairmotionModelController(model, settings=CharacterSettings.copy(settings)),
-                                AnimFileController(settings=CharacterSettings.copy(settings))],
+        animctrl = AnimFileController(settings=CharacterSettings.copy(settings))
+        fmctrl = FairmotionModelController(model, settings=CharacterSettings.copy(settings), animctrl=animctrl)
+        super().__init__(ctrls=[fmctrl, animctrl],
                          settings=settings)
         self.ctrl_type = CharCtrlType.DUAL_ANIM_FILE
         self.model_ctrl = self.ctrls[0]
@@ -30,8 +31,7 @@ class FairmotionDualController(MultiAnimController):
         self.model_ctrl.load_model(model_path)
 
     def load_anim_file(self, filename:str, controller_index=0):
-        for ctrl in self.ctrls:
-            ctrl.load_anim_file(filename)
+        self.ctrls[0].load_anim_file(filename)
         self.reset()
 
     def set_prediction_ratio(self, ratio):
@@ -46,14 +46,14 @@ class FairmotionDualController(MultiAnimController):
     
 
 class FairmotionModelController(UncachedAnimController):
-    def __init__(self, model, settings:CharacterSettings = None):
+    def __init__(self, model, settings:CharacterSettings = None, animctrl = None):
         super().__init__(ctrl_type=CharCtrlType.MODEL, settings=settings)
         self.orig_anim_length = 0.0
         self.in_prediction = False
         self.computed_poses = []
         self.fps = 1.0
-        self.prediction_ratio = 0.9
-        self.anim_file_ctrl = None
+        self.prediction_ratio = 0.5
+        self.anim_file_ctrl = animctrl
         self.load_model(model_path=model)
 
     def get_plot_data(self):
@@ -96,7 +96,8 @@ class FairmotionModelController(UncachedAnimController):
         self.model.eval()
 
     def load_anim_file(self, filename:str, controller_index=0):
-        self.anim_file_ctrl = AnimFileController(settings=self.settings)
+        if self.anim_file_ctrl is None:
+            self.anim_file_ctrl = AnimFileController(settings=self.settings)
         self.anim_file_ctrl.load_anim_file(filename)
         self.full_anim_length = self.anim_file_ctrl.end_time
         self.reference_anim_length = self.full_anim_length
@@ -115,24 +116,30 @@ class FairmotionModelController(UncachedAnimController):
         input_motion = anim_file_ctrl.motion.rotations()[:self.num_ref_frames]
         input_motion = conversions.R2A(input_motion[:,:,:])
         input_motion = input_motion.reshape(1, -1, self.num_dim)
-        input_motion = torch.from_numpy(input_motion)
+        mean, std = amass_mean_std.AMASS_FULL_MEAN, amass_mean_std.AMASS_FULL_STD 
+        input_motion[0] = (input_motion[0]-mean) / (std + np.finfo(float).eps)
+        input_motion = torch.Tensor(input_motion).to(device=self.device).double()
         pred_seq = (
             generate.generate(self.model, input_motion, num_predictions, self.device)
             .to(device="cpu")
             .numpy()
         )
-
+        pred_seq = utils.unnormalize(np.array(pred_seq), mean, std)
+        pred_seq = utils.unflatten_angles(pred_seq, "aa")
+        pred_seq = utils.multiprocess_convert(pred_seq, conversions.A2R)
+        pred_seq = np.array(pred_seq)
+        pred_seq = conversions.R2T(pred_seq)
         self.computed_poses.clear()
         for i in range(self.num_ref_frames):
             self.computed_poses.append(anim_file_ctrl.motion.get_pose_by_frame(i))
         for i in range(num_predictions):
-            poses = conversions.A2T(pred_seq[0].reshape(pred_seq[0].shape[0], pred_seq[0].shape[1] // 3, 3))
-            self.computed_poses.append(Pose(anim_file_ctrl.motion.skel, poses[i]))
+            self.computed_poses.append(Pose(anim_file_ctrl.motion.skel, pred_seq[0][i]))
         self.reset()
 
     def set_prediction_ratio(self, ratio):
-        self.prediction_ratio = ratio
-        self.recompute_prediction(self.anim_file_ctrl)
+        if ratio != self.prediction_ratio:
+            self.prediction_ratio = ratio
+            self.recompute_prediction(self.anim_file_ctrl)
 
     def get_prediction_ratio(self):
         return self.prediction_ratio

@@ -90,13 +90,15 @@ class NNutty(QtCore.QObject):
         self.mutex_characters = Lock()
         self.characters = []
         self.selected_animation = None
+        self._skip_reload_animation = False
 
     def add_character(self, character:Character):
         with self.mutex_characters:
             self.characters.clear()
             self.characters.append(character)
         if self.selected_animation is not None and self.get_first_character().controller.loads_animations():
-            self.set_selected_animation_file(self.selected_animation.parent, self.selected_animation.name)
+            self.set_selected_animation_file(self.selected_animation.parent, self.selected_animation.name, update_plots=True)
+        self._skip_reload_animation = True
         self.charactersModified.emit()
 
     def selected_character_invalid(self):
@@ -187,7 +189,10 @@ class NNutty(QtCore.QObject):
         return self.get_first_character().controller.ctrl_type.name
     
     @QtCore.Slot(str, str, int)
-    def set_selected_animation_file(self, folder, filename, controller_idx=0):
+    def set_selected_animation_file(self, folder, filename, controller_idx=0, update_plots=False):
+        if self._skip_reload_animation:
+            self._skip_reload_animation = False
+            return
         if folder is None or filename is None: 
             self.selected_animation = None
         else:
@@ -195,9 +200,9 @@ class NNutty(QtCore.QObject):
         if (self.selected_character_invalid() or 
             not self.get_first_character().controller.loads_animations()): return
         self.get_first_character().controller.load_anim_file(self.selected_animation, controller_idx)
-        if controller_idx == 0:
+        if update_plots or controller_idx == 0:
             self.plot1Updated.emit()
-        if controller_idx == 1 or type(self.get_first_character().controller) == FairmotionDualController:
+        if update_plots or controller_idx == 1 or type(self.get_first_character().controller) == FairmotionDualController:
             self.plot2Updated.emit()
 
     @QtCore.Slot(float)
@@ -212,6 +217,10 @@ class NNutty(QtCore.QObject):
         if self.selected_character_invalid(): return
         assert(type(self.get_first_character().controller) == FairmotionDualController)
         return self.get_first_character().controller.get_prediction_ratio()
+    
+    @QtCore.Slot(result=str)
+    def get_supported_animation_files_extensions(self):
+        return "*.pkl,*.bvh,*.npz"
     
     def get_plot_data(self, index=0):
         if self.selected_character_invalid(): return

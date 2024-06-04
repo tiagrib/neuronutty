@@ -37,8 +37,9 @@ class AnimFileController(CachedAnimController):
             if not isinstance(filename, list):
                 if filename.suffix.lower() == ".bvh":
                     motion = bvh.load(file=filename)
-                elif filename.suffix.lower() == ".pkl":
-                    motion = amass_dip.load(filename)
+                    motion.name = filename.name
+                elif filename.suffix.lower() in [".pkl", ".npz"]:
+                    motion = amass_dip.load(filename, file_type=filename.suffix.lower()[1:])
                     motion.name = filename.name
             elif (isinstance(filename, list) and len(filename) == 2 and 
                     filename[0] is not None and filename[1] is not None and

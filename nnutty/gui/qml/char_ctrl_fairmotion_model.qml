@@ -72,9 +72,6 @@ GroupBox {
                     Layout.fillHeight: true
                     display_width: 700
                     display_height: 500
-                    Component.onCompleted: {
-                        matplotlibItem1.update_figure(nnutty, 0, null, null)
-                    }
                 }
             }
 
@@ -94,7 +91,6 @@ GroupBox {
                     Layout.fillHeight: true
                     display_width: 700
                     display_height: 500
-                    Component.onCompleted: matplotlibItem2.update_figure(nnutty, 1, null, null)
                 }
             }
         }
@@ -110,5 +106,10 @@ GroupBox {
                 matplotlibItem2.update_figure(nnutty, 1, colPlot2.width, colPlot2.height)
             }
         }
+    }
+    
+    Component.onCompleted: {
+        matplotlibItem1.update_figure(nnutty, 0, matplotlibItem1.display_width, matplotlibItem1.display_height)
+        matplotlibItem2.update_figure(nnutty, 1, matplotlibItem2.display_width, matplotlibItem2.display_height)
     }
 }
