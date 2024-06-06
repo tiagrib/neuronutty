@@ -8,11 +8,14 @@ from nnutty.controllers.multi_anim_controller import MultiAnimController
 from nnutty.controllers.character_controller import CharCtrlType, CharacterSettings
 
 class DualAnimFileController(MultiAnimController):
-    def __init__(self, nnutty, settings:CharacterSettings = None):
+    def __init__(self, nnutty, 
+                 settings:CharacterSettings = None,
+                 parent=None):
         super().__init__(nnutty,
-                         ctrls=[AnimFileController(nnutty, settings=CharacterSettings.copy(settings)),
-                                AnimFileController(nnutty, settings=CharacterSettings.copy(settings))],
-                         settings=settings)
+                         ctrls=[AnimFileController(nnutty, settings=CharacterSettings.copy(settings), parent=self),
+                                AnimFileController(nnutty, settings=CharacterSettings.copy(settings), parent=self)],
+                         settings=settings,
+                         parent=parent)
         self.ctrl_type = CharCtrlType.DUAL_ANIM_FILE
         
     def loads_animations(self):
@@ -28,8 +31,9 @@ class AnimFileController(CachedAnimController):
     def __init__(self,
                  nnutty,
                  filename:str = None,
-                 settings:CharacterSettings = None):
-        super().__init__(nnutty, ctrl_type=CharCtrlType.ANIM_FILE, settings=settings)
+                 settings:CharacterSettings = None,
+                 parent=None):
+        super().__init__(nnutty, ctrl_type=CharCtrlType.ANIM_FILE, settings=settings, parent=parent)
         self.load_anim_file(filename)
         
 

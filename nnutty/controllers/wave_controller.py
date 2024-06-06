@@ -56,8 +56,9 @@ class WaveAnimController(UncachedAnimController):
                  offset:np.ndarray = np.array([0.0, 10.0, 0.0]),
                  amplitude:float = np.pi,
                  phase:float = 0.0,
-                 frequency:float = 1.0):
-        super().__init__(nnutty, ctrl_type=CharCtrlType.WAVE, settings=settings)
+                 frequency:float = 1.0,
+                 parent=None):
+        super().__init__(nnutty, ctrl_type=CharCtrlType.WAVE, settings=settings, parent=parent)
         self.output_name = channel_name
         self.output_value = 0.0
         self.amplitude = amplitude

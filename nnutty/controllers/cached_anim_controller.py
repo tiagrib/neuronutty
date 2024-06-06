@@ -7,8 +7,9 @@ class CachedAnimController(CharacterController):
     def __init__(self, 
                  nnutty, 
                  ctrl_type:CharCtrlType = CharCtrlType.UNKNOWN,
-                 settings:CharacterSettings = None):
-        super().__init__(nnutty, ctrl_type=ctrl_type, settings=settings)
+                 settings:CharacterSettings = None,
+                 parent=None):
+        super().__init__(nnutty, ctrl_type=ctrl_type, settings=settings, parent=parent)
         self.cur_time = 0.0
         self.end_time = 0.0
         self.fps = 1.0

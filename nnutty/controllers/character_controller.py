@@ -89,10 +89,12 @@ class CharacterController():
     def __init__(self, 
                  nnutty,
                  ctrl_type: CharCtrlType = CharCtrlType.UNKNOWN, 
-                 settings:CharacterSettings = None):
+                 settings:CharacterSettings = None,
+                 parent=None):
         self.nnutty = nnutty
         self.ctrl_type = ctrl_type
         self.control_count = 1
+        self.parent = parent
         if settings is None:
             self.settings = CharacterSettings()
         else:

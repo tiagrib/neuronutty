@@ -17,12 +17,16 @@ from thirdparty.fairmotion.tasks.motion_prediction.dataset import FORCE_DATA_TO_
 
 
 class FairmotionDualController(MultiAnimController):
-    def __init__(self, nnutty, model_path:str = None, settings:CharacterSettings = None):
-        animctrl = AnimFileController(nnutty, settings=CharacterSettings.copy(settings))
-        fmctrl = FairmotionModelController(nnutty, model_path, settings=CharacterSettings.copy(settings), animctrl=animctrl)
+    def __init__(self, nnutty, 
+                 model_path:str = None, 
+                 settings:CharacterSettings = None,
+                 parent=None):
+        animctrl = AnimFileController(nnutty, settings=CharacterSettings.copy(settings), parent=self)
+        fmctrl = FairmotionModelController(nnutty, model_path, settings=CharacterSettings.copy(settings), animctrl=animctrl, parent=self)
         super().__init__(nnutty,
                          ctrls=[fmctrl, animctrl],
-                         settings=settings)
+                         settings=settings,
+                         parent=parent)
         self.ctrl_type = CharCtrlType.DUAL_ANIM_FILE
         self.model_ctrl = self.ctrls[0]
         
@@ -53,8 +57,11 @@ class FairmotionDualController(MultiAnimController):
     
 
 class FairmotionModelController(UncachedAnimController):
-    def __init__(self, nnutty, model_path:str = None, settings:CharacterSettings = None, animctrl = None):
-        super().__init__(nnutty, ctrl_type=CharCtrlType.MODEL, settings=settings)
+    def __init__(self, nnutty, model_path:str = None, 
+                 settings:CharacterSettings = None, 
+                 animctrl = None,
+                 parent=None):
+        super().__init__(nnutty, ctrl_type=CharCtrlType.MODEL, settings=settings, parent=parent)
         self.orig_anim_length = 0.0
         self.in_prediction = False
         self.computed_poses = []
@@ -157,7 +164,10 @@ class FairmotionModelController(UncachedAnimController):
             self.computed_poses.append(anim_file_ctrl.motion.get_pose_by_frame(i))
         for i in range(num_predictions):
             self.computed_poses.append(Pose(anim_file_ctrl.motion.skel, pred_seq[0][i]))
-        self.reset()
+        if self.parent:
+            self.parent.reset()
+        else:
+            self.reset()
         self.nnutty.plot1Updated.emit()
 
     def set_prediction_ratio(self, ratio):
