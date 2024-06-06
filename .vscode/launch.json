@@ -18,6 +18,33 @@
             "program": "${workspaceFolder}/__main__.py",
             "console": "integratedTerminal",
             "args": [ ]
+        },
+        {
+            "name": "TrainDaemon",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/__main__.py",
+            "console": "integratedTerminal",
+            "args": [ "train_daemon" ]
+        },
+        {
+            "name": "Train",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/__main__.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": [   "train",
+                        "--save-model-path", "C:/repo/shared/models/AMASS_JointLimit_tied_seq2seq", 
+                        "--preprocessed-path", "C:/repo/shared/preprocessed/AMASS_JointLimit/aa", 
+                        "--epochs", "100", 
+                        "--device", "cuda", 
+                        "--save-model-frequency", "5", 
+                        "--architecture", "sttransformer",
+                        "--batch-size", "2",
+                        "--num-heads", "64",
+                        "--lr", "0.01",
+                    ]        
         }
     ]
 }

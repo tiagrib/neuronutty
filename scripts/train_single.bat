@@ -1,0 +1,5 @@
+
+:: python -m fairmotion.tasks.motion_prediction.training --save-model-path C:\repo\shared\models\AMASS_MIXAMO_seq2seq --preprocessed-path C:\repo\shared\preprocessed\AMASS_MIXAMO\aa --epochs 100 --device cuda --save-model-frequency 5 --architecture seq2seq
+:: python -m fairmotion.tasks.motion_prediction.training --save-model-path C:\repo\shared\models\AMASS_JointLimit_tied_seq2seq --preprocessed-path C:\repo\shared\preprocessed\AMASS_JointLimit\aa --epochs 100 --device cuda --save-model-frequency 5 --architecture tied_seq2seq
+
+python . train --save-model-path C:/repo/shared/models/AMASS_JointLimit_tied_seq2seq --preprocessed-path C:/repo/shared/preprocessed/AMASS_JointLimit/aa --epochs 100 --device cuda --save-model-frequency 5 --architecture sttransformer --batch-size 2 --num-heads 64 --lr 0.001

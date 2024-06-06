@@ -30,7 +30,7 @@ def set_seeds():
 
 def train(args):
     fairmotion_utils.create_dir_if_absent(args.save_model_path)
-    logging.info(args._get_kwargs())
+    logging.info(str(args))
     utils.log_config(args.save_model_path, args)
 
     set_seeds()
