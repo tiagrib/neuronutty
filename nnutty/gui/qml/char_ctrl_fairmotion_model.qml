@@ -17,6 +17,10 @@ GroupBox {
 
         RowLayout {
             Button {
+                text: "Display All Models"
+                onClicked: nnutty.display_all_models()
+            }
+            Button {
                 text: "Restart Playback"
                 onClicked: nnutty.reset_playback()
             }
@@ -66,7 +70,7 @@ GroupBox {
                 Layout.fillHeight: true
 
                 Label {
-                    text: "Generated"
+                    text: "Reference"
                     Layout.fillWidth: true
                 }
             
@@ -85,7 +89,7 @@ GroupBox {
                 Layout.fillHeight: true
 
                 Label {
-                    text: "Reference"
+                    text: "Generated"
                     Layout.fillWidth: true
                 }
 
