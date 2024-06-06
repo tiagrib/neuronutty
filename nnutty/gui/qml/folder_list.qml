@@ -10,6 +10,7 @@ GroupBox {
     Material.theme: Material.Dark
     
     property int selected_controller: 0
+    property alias folderTreeModel: listView.model
 
     ColumnLayout {
         id: colLayout

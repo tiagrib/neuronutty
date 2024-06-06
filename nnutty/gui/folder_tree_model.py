@@ -11,6 +11,7 @@ class FolderTreeModel(QtGui.QStandardItemModel):
         super().__init__(parent)
         self._folder = ''
         self._filter = ''
+        self.items = []
 
     def get_folder(self):
         return self._folder
@@ -40,6 +41,7 @@ class FolderTreeModel(QtGui.QStandardItemModel):
 
     def scanDirectory(self):
         self.clear()
+        self.items.clear()
 
         # check that self._folder is not None and exists
         if not self._folder or not os.path.exists(self._folder):
@@ -61,6 +63,7 @@ class FolderTreeModel(QtGui.QStandardItemModel):
                         if found_valid_files:
                             break
                 if valid_directory:
+                    self.items.append(dir)
                     item = QtGui.QStandardItem(dir)
                     item.setData(dir)
                     self.appendRow(item)

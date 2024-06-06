@@ -11,6 +11,15 @@ RowLayout {
     anchors.fill: parent
     Material.theme: Material.Dark
 
+    function getFolderTreeModel() {
+        if (anim2FileListLoader.children.length > 0 && anim2FileListLoader.children[0].folderTreeModel !== undefined) {
+            return anim2FileListLoader.children[0].folderTreeModel;
+        } else {
+            console.error("No folderTreeModel found");
+            return null;
+        }
+    }
+
     Rectangle {
         Layout.fillWidth: true
         Layout.fillHeight: true

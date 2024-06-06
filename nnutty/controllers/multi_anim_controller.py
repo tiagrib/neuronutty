@@ -9,10 +9,12 @@ class MultiAnimController(CharacterController):
         assert(len(ctrls) != 0)
         assert(all([isinstance(ctrl, CharacterController) for ctrl in ctrls]))
         
-        self.control_count = len(ctrls)
         self.ctrls = ctrls
+        self.reposition_subcontrollers()
+
+    def reposition_subcontrollers(self):
         for i, ctrl in enumerate(self.ctrls):
-            ctrl.settings.world_offset = [-self.control_count + 2*i, 0.0, 0.0]
+            ctrl.settings.world_offset = [-len(self.ctrls) + 2*i, 0.0, 0.0]
 
     def reset(self):
         for ctrl in self.ctrls:

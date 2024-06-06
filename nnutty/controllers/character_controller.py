@@ -93,7 +93,6 @@ class CharacterController():
                  parent=None):
         self.nnutty = nnutty
         self.ctrl_type = ctrl_type
-        self.control_count = 1
         self.parent = parent
         if settings is None:
             self.settings = CharacterSettings()

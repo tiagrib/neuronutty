@@ -10,15 +10,23 @@ GroupBox {
     title: "Fairmotion Model Controller"
     Material.theme: Material.Dark
 
+    function getFolderTreeModel() {
+        return parent.getFolderTreeModel()
+    }
+
     ColumnLayout {
         id: colLayout
         spacing: 10
         anchors.fill: parent
 
         RowLayout {
-            Button {
+            Switch {
+                id: switchShowOrigin
+                onCheckedChanged: {
+                    nnutty.display_all_models(getFolderTreeModel(), checked)
+                }
                 text: "Display All Models"
-                onClicked: nnutty.display_all_models()
+                checked: false
             }
             Button {
                 text: "Restart Playback"

@@ -16,7 +16,7 @@ from nnutty.util import amass_mean_std
 from thirdparty.fairmotion.tasks.motion_prediction.dataset import FORCE_DATA_TO_FLOAT32
 
 
-class FairmotionDualController(MultiAnimController):
+class FairmotionMultiController(MultiAnimController):
     def __init__(self, nnutty, 
                  model_path:str = None, 
                  settings:CharacterSettings = None,
@@ -28,7 +28,7 @@ class FairmotionDualController(MultiAnimController):
                          settings=settings,
                          parent=parent)
         self.ctrl_type = CharCtrlType.DUAL_ANIM_FILE
-        self.model_ctrl = self.ctrls[1]
+        self.model_ctrls = [self.ctrls[1]]
         
     def loads_animations(self):
         return True
@@ -37,30 +37,63 @@ class FairmotionDualController(MultiAnimController):
         return True
         
     def load_model(self, model_path:str):
-        self.model_ctrl.load_model(model_path)
+        for ctrl in self.model_ctrls:
+            ctrl.load_model(model_path)
 
     def load_anim_file(self, filename:str, controller_index:int=0, update_plots:bool=False):
-        self.model_ctrl.load_anim_file(filename)
+        self.model_ctrls[0].load_anim_file(filename)
+        for i in range(1, len(self.model_ctrls)):
+            self.model_ctrls[i].anim_file_ctrl = self.model_ctrls[0].anim_file_ctrl
         self.reset()
         self.nnutty.plot1Updated.emit()
         self.nnutty.plot2Updated.emit()
 
     def set_prediction_ratio(self, ratio):
-        self.model_ctrl.set_prediction_ratio(ratio)
+        for ctrl in self.model_ctrls:
+            ctrl.set_prediction_ratio(ratio)
         self.reset()
 
     def get_prediction_ratio(self):
-        return self.model_ctrl.get_prediction_ratio()
+        return self.model_ctrls[0].get_prediction_ratio()
     
     def get_plot_data(self, index):
         return self.ctrls[index].get_plot_data()
+    
+    def display_all_models(self, state:bool, selected_item, all_items):
+        if state:
+            print("Displaying all models in folder", Path(selected_item).parent)
+            animctrl = self.ctrls[0]
+            self.ctrls = [animctrl]
+            self.model_ctrls.clear()
+            first_model = True
+            for item in all_items:
+                modelpath = Path(selected_item).parent / item
+                ctrl = FairmotionModelController(self.nnutty, modelpath, settings=CharacterSettings.copy(self.settings), animctrl=animctrl, parent=self, recompute=False)
+                if first_model:
+                    ctrl.preprocess_motion()
+                    first_model = False
+                else:
+                    ctrl.preprocessed_motion = self.model_ctrls[0].preprocessed_motion
+                ctrl.recompute_prediction()
+                self.ctrls.append(ctrl)
+                self.model_ctrls.append(ctrl)
+        else:
+            print("Displaying single model: ", Path(selected_item).name)
+            animctrl = self.ctrls[0]
+            self.ctrls = [animctrl]
+            self.model_ctrls = [FairmotionModelController(self.nnutty, selected_item, settings=CharacterSettings.copy(self.settings), animctrl=animctrl, parent=self)]
+            self.load_model(selected_item)
+            self.model_ctrls[0].preprocess_motion()
+            self.model_ctrls[0].recompute_prediction()
+        self.reposition_subcontrollers()
     
 
 class FairmotionModelController(UncachedAnimController):
     def __init__(self, nnutty, model_path:str = None, 
                  settings:CharacterSettings = None, 
                  animctrl = None,
-                 parent=None):
+                 parent=None,
+                 recompute=True):
         super().__init__(nnutty, ctrl_type=CharCtrlType.MODEL, settings=settings, parent=parent)
         self.orig_anim_length = 0.0
         self.in_prediction = False
@@ -73,9 +106,12 @@ class FairmotionModelController(UncachedAnimController):
         self.model_std = amass_mean_std.AMASS_FULL_STD
         if self.anim_file_ctrl is None:
             self.anim_file_ctrl = AnimFileController(settings=self.settings)
+        else:
+            self.reference_anim_length = self.anim_file_ctrl.end_time
+            self.fps = self.anim_file_ctrl.fps
             
         if model_path:
-            self.load_model(model_path)
+            self.load_model(model_path,recompute=recompute)
 
     def get_plot_data(self):
         if self.anim_file_ctrl is None or self.anim_file_ctrl.motion is None:
@@ -88,7 +124,7 @@ class FairmotionModelController(UncachedAnimController):
         else:
             return None
 
-    def load_model(self, model_path:str):
+    def load_model(self, model_path:str, recompute:bool=True):
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         model_path = Path(model_path)
         if model_path.is_dir():
@@ -99,6 +135,7 @@ class FairmotionModelController(UncachedAnimController):
         self.num_dim = 72
         hidden_dim = 1024
         num_layers = 1
+        num_heads = 4
         architecture = "seq2seq"
         with open(Path(model_folder) / "config.txt", "r") as f:
             config = f.readlines()
@@ -107,12 +144,15 @@ class FairmotionModelController(UncachedAnimController):
                 line = line.strip()
                 key = line.split(":")[0]
                 value = line[len(key)+1:]
-                if key == "hidden_dim":
-                    hidden_dim = int(value)
-                elif key == "num_layers":
-                    num_layers = int(value)
-                elif key == "architecture":
-                    architecture = value
+                if value != None and value.lower() != "none":
+                    if key == "hidden_dim":
+                        hidden_dim = int(value)
+                    elif key == "num_heads":
+                        num_heads = int(value)
+                    elif key == "num_layers":
+                        num_layers = int(value)
+                    elif key == "architecture":
+                        architecture = value
 
         logging.info(f"Preparing model '{model_path}'...")
         self.model = utils.prepare_model(
@@ -120,17 +160,18 @@ class FairmotionModelController(UncachedAnimController):
             hidden_dim=hidden_dim,
             device=self.device,
             num_layers=num_layers,
+            num_heads=num_heads,
             architecture=architecture,
         )
         self.model.load_state_dict(torch.load(model_path, map_location=self.device))
         self.model.eval()
         logging.info(f"Model loaded into '{self.device}'.")
-        self.recompute_prediction()
+        if recompute:
+            self.recompute_prediction()
 
     def load_anim_file(self, filename:str, controller_index=0):
         self.anim_file_ctrl.load_anim_file(filename)
-        self.full_anim_length = self.anim_file_ctrl.end_time
-        self.reference_anim_length = self.full_anim_length
+        self.reference_anim_length = self.anim_file_ctrl.end_time
         self.fps = self.anim_file_ctrl.fps
         self.preprocess_motion()
         self.recompute_prediction()
@@ -150,7 +191,7 @@ class FairmotionModelController(UncachedAnimController):
         
         num_predictions = int(self.prediction_ratio * self.anim_file_ctrl.motion.num_frames())
         logging.info(f"Running model for {num_predictions} frames...")
-        self.reference_anim_length = self.full_anim_length - num_predictions/self.anim_file_ctrl.fps
+        self.reference_anim_length = self.anim_file_ctrl.end_time - num_predictions/self.anim_file_ctrl.fps
         self.num_ref_frames = self.anim_file_ctrl.motion.num_frames() - num_predictions
 
         input_motion = self.preprocessed_motion[:,:self.num_ref_frames,:]
@@ -191,7 +232,7 @@ class FairmotionModelController(UncachedAnimController):
     def advance_time(self, dt, params=None):
         if self.computed_poses:
             self.cur_time += dt
-            if self.cur_time > self.full_anim_length:
+            if self.cur_time > self.anim_file_ctrl.end_time:
                 self.cur_time = 0.0
             if self.cur_time > self.reference_anim_length:
                 if not self.in_prediction:

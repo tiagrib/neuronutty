@@ -39,7 +39,7 @@ ApplicationWindow {
 
     function getCharacterControlsSource() {
         switch (nnutty.get_selected_character_controller_name()) {
-            case "FairmotionDualController":
+            case "FairmotionMultiController":
                 return "char_ctrl_fairmotion_model.qml";
             case "AnimFileController":
             case "DualAnimFileController":
@@ -132,6 +132,14 @@ ApplicationWindow {
                     id: animFilePanelLoader
                     anchors.fill: parent
                     source: ""
+
+                    function getFolderTreeModel() {
+                        if (animFilePanelLoader.children.length > 0) {
+                            return animFilePanelLoader.children[0].getFolderTreeModel();
+                        } else {
+                            return null;
+                        }
+                    }
                 }
             }
             Rectangle {
@@ -146,6 +154,10 @@ ApplicationWindow {
                     id: controllerSettingsLoader
                     anchors.fill: parent
                     source: main.getCharacterControlsSource()
+
+                    function getFolderTreeModel() {
+                        return animFilePanelLoader.getFolderTreeModel()
+                    }
                 }
             }
         }
@@ -160,7 +172,7 @@ ApplicationWindow {
                 animFilePanelLoader.source = ""
                 if (nnutty.get_selected_character_controller_name() === "DualAnimFileController") {
                     animFilePanelLoader.source = "dual_anim_file_panel.qml"
-                } else if (nnutty.get_selected_character_controller_name() === "FairmotionDualController") {
+                } else if (nnutty.get_selected_character_controller_name() === "FairmotionMultiController") {
                     animFilePanelLoader.source = "char_ctrl_fairmotion_top_panel.qml"
                 } else if (nnutty.get_selected_character_controller_name() === "AnimFileController") {
                     animFilePanelLoader.source = "anim_file_panel.qml"

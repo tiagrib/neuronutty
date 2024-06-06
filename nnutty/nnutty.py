@@ -9,7 +9,7 @@ from PySide6 import QtCore
 
 
 from nnutty.controllers.character_controller import CharacterSettings
-from nnutty.controllers.fairmotion_torch_model_controller import FairmotionDualController
+from nnutty.controllers.fairmotion_torch_model_controller import FairmotionMultiController
 from nnutty.controllers.wave_controller import WaveAnimController
 from nnutty.gui.nnutty_win import NNuttyWin
 from nnutty.gui.viz.nnutty_viewer import NNuttyViewer
@@ -137,7 +137,7 @@ class NNutty(QtCore.QObject):
     def add_fairmotion_model_character(self):
         logging.info("add_fairmotion_model_character()")
         self.add_character(Character(body_model=BodyModel("stick_figure2"),
-                                     controller=FairmotionDualController(self, settings=CharacterSettings(args=self.args))))
+                                     controller=FairmotionMultiController(self, settings=CharacterSettings(args=self.args))))
 
     @QtCore.Slot()
     def add_dip_character(self):
@@ -219,15 +219,15 @@ class NNutty(QtCore.QObject):
 
     @QtCore.Slot(float)
     def set_fairmotion_model_prediction_ratio(self, ratio=0.9):
-        if self.selected_character_invalid(): return
-        assert(type(self.get_first_character().controller) == FairmotionDualController)
+        if (self.selected_character_invalid() or
+            not (type(self.get_first_character().controller) == FairmotionMultiController)): return
         self.get_first_character().controller.set_prediction_ratio(ratio)
         self.plot1Updated.emit()
 
     @QtCore.Slot(result=float)
     def get_fairmotion_model_prediction_ratio(self):
-        if self.selected_character_invalid(): return
-        assert(type(self.get_first_character().controller) == FairmotionDualController)
+        if (self.selected_character_invalid() or
+            not (type(self.get_first_character().controller) == FairmotionMultiController)): return
         return self.get_first_character().controller.get_prediction_ratio()
     
     @QtCore.Slot(result=str)
@@ -237,8 +237,14 @@ class NNutty(QtCore.QObject):
     @QtCore.Slot()
     def reset_playback(self):
         if self.selected_character_invalid(): return
-        assert(type(self.get_first_character().controller) == FairmotionDualController)
         return self.get_first_character().controller.reset()
+    
+    @QtCore.Slot(QtCore.QObject, bool)
+    def display_all_models(self, folderModel, state:bool):
+        if (self.selected_character_invalid() or 
+            self.selected_folder is None or
+            not self.get_first_character().controller.loads_folders()): return
+        return self.get_first_character().controller.display_all_models(state, self.selected_folder, folderModel.items)
         
     
     def get_plot_data(self, index=0):
