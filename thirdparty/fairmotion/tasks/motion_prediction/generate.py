@@ -2,6 +2,8 @@
 
 import torch
 
+from thirdparty.fairmotion.tasks.motion_prediction.dataset import FORCE_DATA_TO_FLOAT32
+
 
 def eval(model, criterion, dataset, batch_size, device):
     """
@@ -25,7 +27,8 @@ def eval(model, criterion, dataset, batch_size, device):
                 max_len=max_len,
                 teacher_forcing_ratio=0,
             )
-            outputs = outputs.double()
+            if not FORCE_DATA_TO_FLOAT32:
+                outputs = outputs.double()
             loss = criterion(outputs, tgt_seqs)
             eval_loss += loss.item()
         return eval_loss / ((iterations + 1) * batch_size)

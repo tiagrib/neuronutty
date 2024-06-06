@@ -80,6 +80,6 @@ class TiedSeq2Seq(nn.Module):
     def forward(self, src, tgt, max_len=None, teacher_forcing_ratio=0.5):
         hidden, cell, outputs = self.encoder(src)
         outputs = self.decoder(
-            tgt, hidden, cell, outputs, max_len, teacher_forcing_ratio,
+            tgt, hidden, cell, max_len, teacher_forcing_ratio,
         )
         return outputs

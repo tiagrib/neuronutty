@@ -13,6 +13,7 @@ from fairmotion.core.motion import Pose
 from fairmotion.ops import conversions
 from nnutty.util.plot_data import PlotData, get_plot_data_from_poses
 from nnutty.util import amass_mean_std
+from thirdparty.fairmotion.tasks.motion_prediction.dataset import FORCE_DATA_TO_FLOAT32
 
 
 class FairmotionDualController(MultiAnimController):
@@ -137,7 +138,9 @@ class FairmotionModelController(UncachedAnimController):
         input_motion = input_motion.reshape(1, -1, self.num_dim)
         mean, std = amass_mean_std.AMASS_FULL_MEAN, amass_mean_std.AMASS_FULL_STD 
         input_motion[0] = (input_motion[0]-mean) / (std + np.finfo(float).eps)
-        input_motion = torch.Tensor(input_motion).to(device=self.device).double()
+        input_motion = torch.Tensor(input_motion).to(device=self.device)
+        if not FORCE_DATA_TO_FLOAT32:
+            input_motion = input_motion.double()
         pred_seq = (
             generate.generate(self.model, input_motion, num_predictions, self.device)
             .to(device="cpu")

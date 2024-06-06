@@ -6,6 +6,7 @@ import torch
 import torch.utils.data as data
 from fairmotion.utils import constants
 
+FORCE_DATA_TO_FLOAT32 = True
 
 class Dataset(data.Dataset):
     def __init__(self, dataset_path, device, mean=None, std=None):
@@ -27,6 +28,11 @@ class Dataset(data.Dataset):
         tgt_seq = (self.tgt_seqs[index] - self.mean) / (
             self.std + constants.EPSILON
         )
+        
+        if FORCE_DATA_TO_FLOAT32:
+            src_seq = torch.Tensor(src_seq).to(device=self.device)
+            tgt_seq = torch.Tensor(tgt_seq).to(device=self.device)
+            return src_seq.float(), tgt_seq.float()
         src_seq = torch.Tensor(src_seq).to(device=self.device).double()
         tgt_seq = torch.Tensor(tgt_seq).to(device=self.device).double()
         return src_seq, tgt_seq

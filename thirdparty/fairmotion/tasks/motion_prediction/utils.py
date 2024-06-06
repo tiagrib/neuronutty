@@ -15,6 +15,8 @@ from fairmotion.models import (
     seq2seq,
     transformer,
 )
+from thirdparty.DLMP import st_transformer as transformerSpatialTemporal
+
 from fairmotion.tasks.motion_prediction import dataset as motion_dataset
 from fairmotion.utils import constants
 from fairmotion.ops import conversions
@@ -113,8 +115,14 @@ def prepare_dataset(
 
 
 def prepare_model(
-    input_dim, hidden_dim, device, num_layers=1, architecture="seq2seq"
+    input_dim, hidden_dim, device, 
+    architecture="seq2seq", 
+    num_layers=1, 
+    ninp=128, 
+    num_heads=4,
+    src_length=120
 ):
+    architecture = architecture.lower()
     if architecture == "rnn":
         model = rnn.RNN(input_dim, hidden_dim, num_layers)
     if architecture == "seq2seq":
@@ -132,15 +140,22 @@ def prepare_model(
         model = seq2seq.TiedSeq2Seq(input_dim, hidden_dim, num_layers, device)
     elif architecture == "transformer_encoder":
         model = transformer.TransformerLSTMModel(
-            input_dim, hidden_dim, 4, hidden_dim, num_layers,
+            input_dim, hidden_dim, num_heads, hidden_dim, num_layers,
         )
     elif architecture == "transformer":
         model = transformer.TransformerModel(
-            input_dim, hidden_dim, 4, hidden_dim, num_layers,
+            input_dim, hidden_dim, num_heads, hidden_dim, num_layers,
+        )
+    elif architecture == "sttransformer":
+        model = transformerSpatialTemporal.TransformerSpatialTemporalModel(
+            input_dim, ninp, num_heads, hidden_dim, num_layers, src_length
         )
     model = model.to(device)
     model.zero_grad()
-    model.double()
+    if motion_dataset.FORCE_DATA_TO_FLOAT32:
+        model.float()
+    else:
+        model.double()
     return model
 
 

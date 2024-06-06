@@ -8,9 +8,13 @@ import os
 import random
 import torch
 import torch.nn as nn
+import sys
+
+sys.path.append(r"C:/repo/neuronutty/thirdparty")
 
 from fairmotion.tasks.motion_prediction import generate, utils, test
 from fairmotion.utils import utils as fairmotion_utils
+from fairmotion.tasks.motion_prediction.dataset import FORCE_DATA_TO_FLOAT32
 
 
 logging.basicConfig(
@@ -103,11 +107,14 @@ def train(args):
             outputs = model(
                 src_seqs, tgt_seqs, teacher_forcing_ratio=teacher_forcing_ratio
             )
-            outputs = outputs.double()
+            if not FORCE_DATA_TO_FLOAT32:
+                outputs = outputs.double()
             loss = criterion(
                 outputs,
                 utils.prepare_tgt_seqs(args.architecture, src_seqs, tgt_seqs),
             )
+            #add a small eps to loss
+            loss += 1e-6
             loss.backward()
             opt.step()
             epoch_loss += loss.item()
