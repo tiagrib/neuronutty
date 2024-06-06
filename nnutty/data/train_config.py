@@ -41,6 +41,8 @@ class TrainConfig:
             key = key.replace('-', '_')
             if value.lower() == 'none':
                 value = None
+            elif '.' in value and value.replace(".", "").isnumeric():
+                value = float(value)
             elif value.isdigit():
                 value = int(value)
             elif value.lower() in ['true', 'false']:

@@ -15,10 +15,15 @@ class TrainDaemon:
             watch_path = Path(watch_path)
         self.watch_path = watch_path
 
-    def is_valid(self, file_path, running=False):
+    def is_valid(self, file_path, running=False, override_mine_only=None):
+        mine_only = self.mine_only
+        if override_mine_only is not None:
+            mine_only = override_mine_only
         if (file_path.is_file() and 
-            (not self.mine_only or
-             self.mine_only and file_path.name.split('.')[0] == platform.node().lower()) and
+            (not mine_only or
+             (self.mine_only and (
+                 (file_path.name.split('.')[0] == platform.node().lower()) or
+                 (len(file_path.name.split('.')) < 3)))) and
              ((not file_path.suffix == ".done") or
               (running and not file_path.suffix == ".running"))):
               return True
@@ -30,7 +35,7 @@ class TrainDaemon:
         print(f"Watching {self.watch_path} for model configuration files matching: '{filter_description}'")
 
         for path in self.watch_path.rglob("*"):
-            if self.is_valid(path, running=True):
+            if self.is_valid(path, running=True, override_mine_only=True):
                 print(f"Reset '{path}'.")
                 os.rename(path, path.with_name(f"{path.stem}.txt"))
 
@@ -53,7 +58,13 @@ class TrainDaemon:
         
         print(f"Running {path} containing configuration:")
         print(config)
-        os.rename(path, path.with_name(f"{path.stem}.running"))
+        job_name = path.stem
+        if job_name.split('.')[0] != platform.node().lower():
+            job_name = f"{platform.node().lower()}.{job_name}"
+        job_name = f"{job_name}.running"
+        new_path = path.with_name(job_name)
+        os.rename(path, new_path)
+        path = new_path
 
         from fairmotion.tasks.motion_prediction import training
         training.train(config)
