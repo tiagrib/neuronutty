@@ -1,0 +1,1 @@
+ps.exe -NoProfile -File "training_daemon.ps1"
