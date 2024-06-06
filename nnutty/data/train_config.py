@@ -26,6 +26,9 @@ class TrainConfig:
         if self.c is None:
             self.c = 'Charlie'
 
+    def _get_kwargs(self):
+        return [(field.name, getattr(self, field.name)) for field in fields(self)]
+
     @classmethod
     def from_file(cls, file_path):
         with open(file_path, 'r') as file:
@@ -34,7 +37,7 @@ class TrainConfig:
         config = {}
         for line in lines:
             line_split = line.strip().split(':')
-            key, value = line_split[0], ''.join(line_split[1:])
+            key, value = line_split[0], ':'.join(line_split[1:])
             key = key.replace('-', '_')
             if value.lower() == 'none':
                 value = None

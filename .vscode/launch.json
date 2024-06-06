@@ -25,7 +25,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/__main__.py",
             "console": "integratedTerminal",
-            "args": [ "train_daemon" ]
+            "args": [ "train_daemon", "--watch-path", "z:/jobs" ]
         },
         {
             "name": "Train",
