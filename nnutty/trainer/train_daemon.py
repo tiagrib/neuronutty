@@ -11,6 +11,8 @@ class TrainDaemon:
         self.mine_only = mine_only
         if watch_path is None:
             watch_path = Path(__file__).resolve().parent
+        else:
+            watch_path = Path(watch_path)
         self.watch_path = watch_path
         
     def run(self):
