@@ -1,4 +1,5 @@
 from dataclasses import dataclass, fields
+from pathlib import Path
 
 @dataclass
 class TrainConfig:
@@ -15,6 +16,9 @@ class TrainConfig:
     architecture: str = 'seq2seq'
     lr: float = None
     optimizer: str = 'sgd'
+    representation: str = 'aa'
+
+    REQUIRED_FIELDS = ['preprocessed_path', 'save_model_path']
 
     def __init__(self, **kwargs):
         for field in fields(self):
@@ -48,5 +52,16 @@ class TrainConfig:
             elif value.lower() in ['true', 'false']:
                 value = value.lower() == 'true'
             config[key] = value
+
+        for required_field in TrainConfig.REQUIRED_FIELDS:
+            if required_field not in config:
+                raise ValueError(f"Missing required field '{required_field}' in config file '{file_path}'!")
+            
+        if not 'representation' in config:
+            if Path(config['preprocessed_path']).name in ['aa', 'rotmat']:
+                config['representation'] = Path(config['preprocessed_path']).name
+                config['preprocessed_path'] = Path(config['preprocessed_path']).parent
+            else:
+                config['representation'] = 'aa'
 
         return cls(**config)

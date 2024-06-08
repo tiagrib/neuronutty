@@ -17,40 +17,51 @@ ARCHITECTURE_OPTIONS = [
 def make_parser():
     parser = argparse.ArgumentParser('NeuroNutty', description='NeuroNutty is a tool for neural motion training based on the Fairmotion framework.')
     subparsers = parser.add_subparsers(dest='command', help='sub-command help')
-    
     train = subparsers.add_parser('train', help='train a model')
-    train.add_argument(
-        "--preprocessed-path", type=str, help="Path to folder with pickled " "files", required=True,
-    )
-    train.add_argument(
-        "--batch-size", type=int, help="Batch size for training", default=64
-    )
-    train.add_argument(
-        "--shuffle", action='store_true', help="Use this option to enable shuffling",
-    )
-    train.add_argument(
-        "--hidden-dim", type=int, help="Hidden size of LSTM units in encoder/decoder", default=1024,
-    )
-    train.add_argument(
-        "--num-layers", type=int, help="Number of layers of LSTM/Transformer in encoder/decoder", default=1,
-    )
-    train.add_argument(
-        "--num-heads", type=int, help="Number of multiattention heads of Transformer", default=4,
-    )
-    train.add_argument(
-        "--save-model-path", type=str, help="Path to store saved models", required=True,
-    )
+    preprocess = subparsers.add_parser('preprocess', help='preprocess datasets')
+    test = subparsers.add_parser('test', help='test a model')
+    train_daemon = subparsers.add_parser('train_daemon', help='Watch for configs to train models')
+    compute_means = subparsers.add_parser('means', help='Compute mean and std for each model.')
+
+    # Common arguments for train and test
+    for subparser in [train, test]:
+        subparser.add_argument(
+            "--preprocessed-path", type=str, help="Path to folder with pickled " "files", required=True,
+        )
+        subparser.add_argument(
+            "--save-model-path", type=str, help="Path to saved models", required=True,
+        )
+        subparser.add_argument(
+            "--representation", type=str, help="Transformation representation format", default="aa", choices=["aa", "rotmat"],
+        )
+        subparser.add_argument(
+            "--hidden-dim", type=int, help="Hidden size of LSTM units in encoder/decoder", default=1024,
+        )
+        subparser.add_argument(
+            "--num-layers", type=int, help="Number of layers of LSTM/Transformer in encoder/decoder", default=1,
+        )
+        subparser.add_argument(
+            "--batch-size", type=int, help="Batch size for testing", default=64
+        )
+        subparser.add_argument(
+            "--shuffle", action='store_true', help="Use this option to enable shuffling",
+        )
+        subparser.add_argument(
+            "--architecture", type=str, help="Seq2Seq archtiecture to be used", default="seq2seq", choices=ARCHITECTURE_OPTIONS,
+        )
+        subparser.add_argument(
+            "--num-heads", type=int, help="Number of multiattention heads of Transformer", default=4,
+        )
+        subparser.add_argument(
+            "--device", type=str, help="Run on device", default=None, choices=["cpu", "cuda"],
+        )
+    
+    # Training only arguments
     train.add_argument(
         "--save-model-frequency", type=int, help="Frequency (in terms of number of epochs) at which model is saved", default=5,
     )
     train.add_argument(
         "--epochs", type=int, help="Number of training epochs", default=200
-    )
-    train.add_argument(
-        "--device", type=str, help="Training device", default=None, choices=["cpu", "cuda"],
-    )
-    train.add_argument(
-        "--architecture", type=str, help="Seq2Seq archtiecture to be used", default="seq2seq", choices=ARCHITECTURE_OPTIONS,
     )
     train.add_argument(
         "--lr", type=float, help="Learning rate", default=None,
@@ -59,7 +70,7 @@ def make_parser():
         "--optimizer", type=str, help="Torch optimizer", default="sgd", choices=["adam", "sgd", "noamopt"],
     )
 
-    preprocess = subparsers.add_parser('preprocess', help='preprocess datasets')
+    # Preprocess only arguments
     preprocess.add_argument( "--input-dir", required=True,
         help="Location of the downloaded and unpacked zip file. See "
         "https://amass.is.tue.mpg.de/dataset for dataset",
@@ -89,41 +100,25 @@ def make_parser():
         "--file-type", type=str, help="Dataset file type.", choices=["pkl", "npz"], default="pkl",
     )
 
-    test = subparsers.add_parser('test', help='test a model')
+    # Test only arguments
     test.add_argument(
-        "--preprocessed-path", type=str, help="Path to folder with pickled" "files from dataset", required=True,
-    )
-    test.add_argument(
-        "--save-model-path", type=str, help="Path to saved models", required=True,
-    )
-    test.add_argument(
-        "--save-output-path", type=str, help="Path to store predicted motion", default=None,
-    )
-    test.add_argument(
-        "--hidden-dim", type=int, help="Hidden size of LSTM units in encoder/decoder", default=1024,
-    )
-    test.add_argument(
-        "--num-layers", type=int, help="Number of layers of LSTM/Transformer in encoder/decoder", default=1,
+        "--epoch", type=int, help="Model from epoch to test, will test on best model if not specified", default=None,
     )
     test.add_argument(
         "--max-len", type=int, help="Length of seq to generate", default=None,
     )
     test.add_argument(
-        "--batch-size", type=int, help="Batch size for testing", default=64
+        "--save-output-path", type=str, help="Path to store predicted motion", default=None,
     )
-    test.add_argument(
-        "--shuffle", action='store_true', help="Use this option to enable shuffling",
-    )
-    test.add_argument(
-        "--epoch", type=int, help="Model from epoch to test, will test on best model if not specified", default=None,
-    )
-    test.add_argument(
-        "--architecture", type=str, help="Seq2Seq archtiecture to be used", default="seq2seq", choices=ARCHITECTURE_OPTIONS,
-    )
-
-    train_daemon = subparsers.add_parser('train_daemon', help='Watch for configs to train models')
+    
+    # Train Daemon only arguments
     train_daemon.add_argument(
         "--watch-path", type=str, help="Path to watch for model config files",
+    )
+    
+    # Compute means only arguments
+    compute_means.add_argument(
+        "--models-path", type=str, help="Path containing all models for which to compute.",
     )
 
     if len(sys.argv) > 1:        
@@ -146,8 +141,12 @@ if __name__ == "__main__":
     elif args.command == 'test':
         from fairmotion.tasks.motion_prediction import testing
         testing.test(args)
+    elif args.command == 'means':
+        from nnutty.tasks.model_mean_std import ModelMeanStd
+        means = ModelMeanStd(args.models_path)
+        means.compute_all_and_save()
     elif args.command == 'train_daemon':
-        from nnutty.trainer.train_daemon import TrainDaemon
+        from nnutty.tasks.train_daemon import TrainDaemon
         daemon = TrainDaemon(args.watch_path)
         daemon.run()
     else:

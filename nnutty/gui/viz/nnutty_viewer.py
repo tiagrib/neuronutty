@@ -48,8 +48,11 @@ class NNuttyViewer(glut_viewer.Viewer):
                          cam=self.cam)
 
     def run(self, **kwargs):
-        import pydevd;
-        pydevd.settrace(suspend=False)
+        import sys
+        if 'debugpy' in sys.modules:
+            print("Running in VS Code")
+            import pydevd;
+            pydevd.settrace(suspend=False)
         glut_viewer.Viewer.run(self, **kwargs)
 
     def destroy(self):

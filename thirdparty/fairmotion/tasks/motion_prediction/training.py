@@ -2,6 +2,7 @@
 
 import argparse
 import logging
+from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import os
@@ -9,6 +10,8 @@ import random
 import torch
 import torch.nn as nn
 import sys
+
+from nnutty.tasks.model_mean_std import ModelMeanStd
 
 sys.path.append(r"C:/repo/neuronutty/thirdparty")
 
@@ -33,10 +36,19 @@ def set_seeds():
 
 
 def train(args):
-    fairmotion_utils.create_dir_if_absent(args.save_model_path)
     logging.info(str(args))
-    utils.log_config(args.save_model_path, args)
-
+    fairmotion_utils.create_dir_if_absent(args.save_model_path)
+    dataset_name = Path(args.preprocessed_path).stem
+    model_name = f"{dataset_name}_{args.representation}_{args.architecture}_{args.hidden_dim}hd_{args.num_layers}l"
+    if "transformer" in args.architecture:
+        model_name += f"_{args.num_heads}heads"
+    dataset_path = Path(args.preprocessed_path) / args.representation
+    dest_model_path = str(Path(args.save_model_path) / model_name)
+    
+    fairmotion_utils.create_dir_if_absent(dest_model_path)
+    utils.log_config(dest_model_path, args)
+    args.save_model_path = dest_model_path
+    
     set_seeds()
     device = "cuda" if torch.cuda.is_available() else "cpu"
     device = args.device if args.device else device
@@ -45,13 +57,17 @@ def train(args):
     logging.info("Preparing dataset...")
     dataset, mean, std = utils.prepare_dataset(
         *[
-            os.path.join(args.preprocessed_path, f"{split}.pkl")
+            os.path.join(dataset_path, f"{split}.pkl")
             for split in ["train", "test", "validation"]
         ],
         batch_size=args.batch_size,
         device=device,
         shuffle=args.shuffle,
     )
+
+    mean_std = ModelMeanStd(args.save_model_path, mean=mean, std=std)
+    mean_std.dump()
+
     # Loss per epoch is the average loss per sequence
     num_training_sequences = len(dataset["train"]) * args.batch_size
 
@@ -70,7 +86,8 @@ def train(args):
     criterion = nn.MSELoss()
     model.init_weights()
     training_losses, val_losses = [], []
-
+    
+    logging.info("Preevaluating model...")
     epoch_loss = 0
     for iterations, (src_seqs, tgt_seqs) in enumerate(dataset["train"]):
         model.eval()
@@ -131,7 +148,7 @@ def train(args):
             f"Iterations {iterations + 1}"
         )
         if epoch % args.save_model_frequency == 0:
-            _, rep = os.path.split(args.preprocessed_path.strip("/"))
+            _, rep = os.path.split(dataset_path.strip("/"))
             _, mae = test.test_model(
                 model=model,
                 dataset=dataset["validation"],

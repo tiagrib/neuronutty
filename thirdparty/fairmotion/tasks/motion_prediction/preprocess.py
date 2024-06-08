@@ -105,65 +105,7 @@ def read_content(filepath):
             content.append(line.strip())
     return content
 
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--input-dir",
-        required=True,
-        help="Location of the downloaded and unpacked zip file. See "
-        "https://amass.is.tue.mpg.de/dataset for dataset",
-    )
-    parser.add_argument(
-        "--output-dir", required=True, help="Where to store pickle files."
-    )
-    parser.add_argument(
-        "--split-dir",
-        default="./data",
-        help="Where the text files defining the data splits are stored.",
-    )
-    parser.add_argument(
-        "--rep",
-        type=str,
-        help="Angle representation to convert data to",
-        choices=["aa", "quat", "rotmat"],
-        default="aa",
-    )
-    parser.add_argument(
-        "--src-len",
-        type=int,
-        default=120,
-        help="Number of frames fed as input motion to the model",
-    )
-    parser.add_argument(
-        "--tgt-len",
-        type=int,
-        default=24,
-        help="Number of frames to be predicted by the model",
-    )
-    parser.add_argument(
-        "--window-size",
-        type=int,
-        default=180,
-        help="Window size for test and validation, in frames.",
-    )
-    parser.add_argument(
-        "--window-stride",
-        type=int,
-        default=120,
-        help="Window stride for test and validation, in frames. This is also"
-        " used as training window size",
-    )
-    parser.add_argument(
-        "--file-type",
-        type=str,
-        help="Dataset file type.",
-        choices=["pkl", "npz"],
-        default="pkl",
-    )
-
-    args = parser.parse_args()
-
+def preprocess(args):
     train_files = read_content(
         os.path.join(args.split_dir, "training_fnames.txt")
     )
@@ -229,3 +171,65 @@ if __name__ == "__main__":
         tgt_len=args.tgt_len,
         create_windows=(args.window_size, args.window_stride),
     )
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--input-dir",
+        required=True,
+        help="Location of the downloaded and unpacked zip file. See "
+        "https://amass.is.tue.mpg.de/dataset for dataset",
+    )
+    parser.add_argument(
+        "--output-dir", required=True, help="Where to store pickle files."
+    )
+    parser.add_argument(
+        "--split-dir",
+        default="./data",
+        help="Where the text files defining the data splits are stored.",
+    )
+    parser.add_argument(
+        "--rep",
+        type=str,
+        help="Angle representation to convert data to",
+        choices=["aa", "quat", "rotmat"],
+        default="aa",
+    )
+    parser.add_argument(
+        "--src-len",
+        type=int,
+        default=120,
+        help="Number of frames fed as input motion to the model",
+    )
+    parser.add_argument(
+        "--tgt-len",
+        type=int,
+        default=24,
+        help="Number of frames to be predicted by the model",
+    )
+    parser.add_argument(
+        "--window-size",
+        type=int,
+        default=180,
+        help="Window size for test and validation, in frames.",
+    )
+    parser.add_argument(
+        "--window-stride",
+        type=int,
+        default=120,
+        help="Window stride for test and validation, in frames. This is also"
+        " used as training window size",
+    )
+    parser.add_argument(
+        "--file-type",
+        type=str,
+        help="Dataset file type.",
+        choices=["pkl", "npz"],
+        default="pkl",
+    )
+
+    args = parser.parse_args()
+
+    preprocess(args)
+    

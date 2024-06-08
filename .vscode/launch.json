@@ -28,6 +28,14 @@
             "args": [ "train_daemon", "--watch-path", "z:/jobs" ]
         },
         {
+            "name": "Compute Means",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/__main__.py",
+            "console": "integratedTerminal",
+            "args": [ "means", "--models-path", "z:/models" ]
+        },
+        {
             "name": "Train",
             "type": "debugpy",
             "request": "launch",
@@ -35,8 +43,8 @@
             "console": "integratedTerminal",
             "justMyCode": false,
             "args": [   "train",
-                        "--save-model-path", "C:/repo/shared/models/AMASS_JointLimit_tied_seq2seq", 
-                        "--preprocessed-path", "C:/repo/shared/preprocessed/AMASS_JointLimit/aa", 
+                        "--save-model-path", "z:/models",
+                        "--preprocessed-path", "C:/repo/shared/preprocessed/AMASS_JointLimit",
                         "--epochs", "100", 
                         "--device", "cuda", 
                         "--save-model-frequency", "5", 
@@ -44,7 +52,23 @@
                         "--batch-size", "2",
                         "--num-heads", "64",
                         "--lr", "0.01",
+                        "--representation", "aa"
+                    ]        
+        },
+        {
+            "name": "Preprocess",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/__main__.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": [   "preprocess",
+                        "--input-dir", "C:/repo/shared/mocap/AMASS/Synthetic_60FPS/AMASS_ACCAD", 
+                        "--output-dir", "C:/repo/shared/preprocessed/AMASS_ACCAD", 
+                        "--rep", "rotmat",
+                        "--split-dir", "C:/repo/shared/mocap/AMASS/Synthetic_60FPS_fnames"
                     ]        
         }
     ]
 }
+

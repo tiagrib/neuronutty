@@ -134,6 +134,7 @@ class TransformerSpatialTemporalModel(nn.Module):
         if self.training:
             max_len  = min(max_len, tgt.shape[1])# if training, we limit the upper bound
         B, T, E = src.shape # src: B, T, E, 32 x 120 x 216
+        self.project_2 = nn.Linear(T, 1, device=src.device)
         data_chunk = torch.zeros(B, max_len, E).type_as(src.data)
         S = 24
         E = int(E/S)

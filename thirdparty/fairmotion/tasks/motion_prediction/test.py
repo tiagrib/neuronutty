@@ -3,6 +3,7 @@
 import argparse
 import itertools
 import logging
+from pathlib import Path
 import numpy as np
 import os
 import torch
@@ -123,9 +124,10 @@ def test_model(model, dataset, rep, device, mean, std, max_len=None):
 def main(args):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     logging.info("Preparing dataset")
+    dataset_path = Path(args.preprocessed_path) / args.representation
     dataset, mean, std = utils.prepare_dataset(
         *[
-            os.path.join(args.preprocessed_path, f"{split}.pkl")
+            os.path.join(dataset_path, f"{split}.pkl")
             for split in ["train", "test", "validation"]
         ],
         batch_size=args.batch_size,
@@ -145,7 +147,7 @@ def main(args):
     )
 
     logging.info("Running model")
-    _, rep = os.path.split(args.preprocessed_path.strip("/"))
+    _, rep = os.path.split(dataset_path.strip("/"))
     seqs_T, mae = test_model(
         model, dataset["validation"], rep, device, mean, std, args.max_len
     )

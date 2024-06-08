@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 import platform
 import time
@@ -5,6 +6,12 @@ import os
 from nnutty.data.train_config import TrainConfig
 
 CONFIG_EXTENSION = ".config"
+
+logging.basicConfig(
+    format="[%(asctime)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+    level=logging.INFO,
+)
 
 class TrainDaemon:
     def __init__(self, watch_path:str=None, mine_only:bool=True):
@@ -32,11 +39,11 @@ class TrainDaemon:
         
     def run(self):
         filter_description = ("" if not self.mine_only else f"{platform.node().lower()}.") + f"*{CONFIG_EXTENSION}"
-        print(f"Watching {self.watch_path} for model configuration files matching: '{filter_description}'")
+        logging.info(f"Watching {self.watch_path} for model configuration files matching: '{filter_description}'")
 
         for path in self.watch_path.rglob("*"):
             if self.is_valid(path, running=True, override_mine_only=True):
-                print(f"Reset '{path}'.")
+                logging.info(f"Reset '{path}'.")
                 os.rename(path, path.with_name(f"{path.stem}.txt"))
 
         while True:
@@ -45,19 +52,18 @@ class TrainDaemon:
                 if self.is_valid(path):
                     self.run_job(path)
             if not found:
-                print("No jobs found. Sleeping for 5 seconds...")
+                logging.info("No jobs found. Sleeping for 5 seconds...")
             time.sleep(5)
 
     def run_job(self, path):
         config = TrainConfig.from_file(path)
-        dataset_name = Path(config.preprocessed_path).parent.stem
-        model_name = f"{dataset_name}_{config.architecture}_{config.hidden_dim}hd_{config.num_layers}l"
+        dataset_name = Path(config.preprocessed_path).stem
+        model_name = f"{dataset_name}_{config.representation}_{config.architecture}_{config.hidden_dim}hd_{config.num_layers}l"
         if "transformer" in config.architecture:
             model_name += f"_{config.num_heads}heads"
-        config.save_model_path = str(Path(config.save_model_path) / model_name)
         
-        print(f"Running {path} containing configuration:")
-        print(config)
+        logging.info(f"Running {path} containing configuration:")
+        logging.info(config)
         job_name = path.stem
         if job_name.split('.')[0] != platform.node().lower():
             job_name = f"{platform.node().lower()}.{job_name}"

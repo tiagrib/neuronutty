@@ -11,6 +11,8 @@ from nnutty.controllers.uncached_anim_controller import UncachedAnimController
 from fairmotion.tasks.motion_prediction import generate, utils
 from fairmotion.core.motion import Pose
 from fairmotion.ops import conversions
+from nnutty.data.train_config import TrainConfig
+from nnutty.tasks.model_mean_std import ModelMeanStd
 from nnutty.util.plot_data import PlotData, get_plot_data_from_poses
 from nnutty.util import amass_mean_std
 from thirdparty.fairmotion.tasks.motion_prediction.dataset import FORCE_DATA_TO_FLOAT32
@@ -99,11 +101,13 @@ class FairmotionModelController(UncachedAnimController):
         self.in_prediction = False
         self.computed_poses = []
         self.fps = 1.0
+        self.representation = "aa"
         self.prediction_ratio = 0.5
         self.anim_file_ctrl = animctrl
         self.preprocessed_motion = None
         self.model_mean = amass_mean_std.AMASS_FULL_MEAN
         self.model_std = amass_mean_std.AMASS_FULL_STD
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
         if self.anim_file_ctrl is None:
             self.anim_file_ctrl = AnimFileController(settings=self.settings)
         else:
@@ -125,43 +129,39 @@ class FairmotionModelController(UncachedAnimController):
             return None
 
     def load_model(self, model_path:str, recompute:bool=True):
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
         model_path = Path(model_path)
         if model_path.is_dir():
             model_folder = model_path
             model_path = model_folder / "best.model"
         else:
             model_folder = model_path.parent
-        self.num_dim = 72
-        hidden_dim = 1024
-        num_layers = 1
-        num_heads = 4
-        architecture = "seq2seq"
-        with open(Path(model_folder) / "config.txt", "r") as f:
-            config = f.readlines()
-            # iterate through each lines and extract the values
-            for line in config:
-                line = line.strip()
-                key = line.split(":")[0]
-                value = line[len(key)+1:]
-                if value != None and value.lower() != "none":
-                    if key == "hidden_dim":
-                        hidden_dim = int(value)
-                    elif key == "num_heads":
-                        num_heads = int(value)
-                    elif key == "num_layers":
-                        num_layers = int(value)
-                    elif key == "architecture":
-                        architecture = value
+        
+        config = TrainConfig.from_file(model_folder / "config.txt")
+        logging.info(f"Model config: {config}")
+
+        mean_std = ModelMeanStd(model_folder)
+        mean_std.load()
+        self.model_mean, self.model_std = mean_std.mean, mean_std.std
+
+        if config.representation != self.representation:
+            self.preprocessed_motion = None
+        self.representation = config.representation
+
+        if self.representation == "rotmat":
+            # 9 x 24 joints
+            self.num_dim = 216
+        else:
+            # aa, 3 x 24 joints
+            self.num_dim = 72
 
         logging.info(f"Preparing model '{model_path}'...")
         self.model = utils.prepare_model(
             input_dim=self.num_dim,
-            hidden_dim=hidden_dim,
+            hidden_dim=config.hidden_dim,
             device=self.device,
-            num_layers=num_layers,
-            num_heads=num_heads,
-            architecture=architecture,
+            num_layers=config.num_layers,
+            num_heads=config.num_heads,
+            architecture=config.architecture,
         )
         self.model.load_state_dict(torch.load(model_path, map_location=self.device))
         self.model.eval()
@@ -177,8 +177,13 @@ class FairmotionModelController(UncachedAnimController):
         self.recompute_prediction()
 
     def preprocess_motion(self):
+        logging.info("Preprocessing motion...")
         self.preprocessed_motion = self.anim_file_ctrl.motion.rotations()
-        self.preprocessed_motion = conversions.R2A(self.preprocessed_motion[:,:,:])
+        if self.representation == "aa":
+            self.preprocessed_motion = conversions.R2A(self.preprocessed_motion[:,:,:])
+        self.num_dim = 1
+        for x in self.preprocessed_motion.shape[1:]:
+            self.num_dim *= x
         self.preprocessed_motion = self.preprocessed_motion.reshape(1, -1, self.num_dim)
         self.preprocessed_motion[0] = (self.preprocessed_motion[0]-self.model_mean) / (self.model_std + np.finfo(float).eps)
         self.preprocessed_motion = torch.Tensor(self.preprocessed_motion).to(device=self.device)
@@ -190,9 +195,14 @@ class FairmotionModelController(UncachedAnimController):
             return
         
         num_predictions = int(self.prediction_ratio * self.anim_file_ctrl.motion.num_frames())
+        if "transformer" in type(self.model).__name__.lower():
+            num_predictions = self.anim_file_ctrl.motion.num_frames() - 120
         logging.info(f"Running model for {num_predictions} frames...")
         self.reference_anim_length = self.anim_file_ctrl.end_time - num_predictions/self.anim_file_ctrl.fps
         self.num_ref_frames = self.anim_file_ctrl.motion.num_frames() - num_predictions
+
+        if self.preprocessed_motion is None:
+            self.preprocess_motion()
 
         input_motion = self.preprocessed_motion[:,:self.num_ref_frames,:]
         pred_seq = (
@@ -201,9 +211,9 @@ class FairmotionModelController(UncachedAnimController):
             .numpy()
         )
         pred_seq = utils.unnormalize(np.array(pred_seq), self.model_mean, self.model_std)
-        pred_seq = utils.unflatten_angles(pred_seq, "aa")
-        pred_seq = conversions.A2R(pred_seq)
-        #pred_seq = utils.multiprocess_convert(pred_seq, conversions.A2R)
+        pred_seq = utils.unflatten_angles(pred_seq, self.representation)
+        if self.representation == "aa":
+            pred_seq = conversions.A2R(pred_seq)
         pred_seq = np.array(pred_seq)
         pred_seq = conversions.R2T(pred_seq)
         self.computed_poses.clear()
@@ -215,7 +225,7 @@ class FairmotionModelController(UncachedAnimController):
             self.parent.reset()
         else:
             self.reset()
-        self.nnutty.plot1Updated.emit()
+        self.nnutty.plot2Updated.emit()
 
     def set_prediction_ratio(self, ratio):
         if ratio != self.prediction_ratio:
