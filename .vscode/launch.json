@@ -36,6 +36,14 @@
             "args": [ "means", "--models-path", "z:/models" ]
         },
         {
+            "name": "Datasets Info",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/__main__.py",
+            "console": "integratedTerminal",
+            "args": [ "dataset_info", "--datasets-path", "z:/preprocessed" ]
+        },
+        {
             "name": "Train",
             "type": "debugpy",
             "request": "launch",

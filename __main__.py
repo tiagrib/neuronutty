@@ -22,6 +22,7 @@ def make_parser():
     test = subparsers.add_parser('test', help='test a model')
     train_daemon = subparsers.add_parser('train_daemon', help='Watch for configs to train models')
     compute_means = subparsers.add_parser('means', help='Compute mean and std for each model.')
+    datasetinfo = subparsers.add_parser('dataset_info', help='Show info about datasets')
 
     # Common arguments for train and test
     for subparser in [train, test]:
@@ -121,6 +122,12 @@ def make_parser():
         "--models-path", type=str, help="Path containing all models for which to compute.",
     )
 
+    # Dataset info
+    datasetinfo.add_argument(
+        "--datasets-path", type=str, help="Path containing all preprocessed datasets.",
+    )
+
+
     if len(sys.argv) > 1:        
         args = parser.parse_args(sys.argv[1:])
     else:
@@ -145,6 +152,10 @@ if __name__ == "__main__":
         from nnutty.tasks.model_mean_std import ModelMeanStd
         means = ModelMeanStd(args.models_path)
         means.compute_all_and_save()
+    elif args.command == 'dataset_info':
+        from nnutty.tasks.dataset_info import DatasetInfo
+        dsinfo = DatasetInfo(args.datasets_path)
+        dsinfo.run()
     elif args.command == 'train_daemon':
         from nnutty.tasks.train_daemon import TrainDaemon
         daemon = TrainDaemon(args.watch_path)
