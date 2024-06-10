@@ -10,8 +10,10 @@ import random
 import torch
 import torch.nn as nn
 import sys
+import time
 
 from nnutty.tasks.model_mean_std import ModelMeanStd
+from nnutty.util import pretty_time_delta
 
 sys.path.append(r"C:/repo/neuronutty/thirdparty")
 
@@ -89,12 +91,15 @@ def train(args):
     
     logging.info("Preevaluating model...")
     epoch_loss = 0
+    start_time = time.perf_counter()
     for iterations, (src_seqs, tgt_seqs) in enumerate(dataset["train"]):
         model.eval()
         src_seqs, tgt_seqs = src_seqs.to(device), tgt_seqs.to(device)
         outputs = model(src_seqs, tgt_seqs, teacher_forcing_ratio=1,)
         loss = criterion(outputs, tgt_seqs)
         epoch_loss += loss.item()
+    epoch_time = time.perf_counter() - start_time
+    print(f"Epoch time: {epoch_time:.2f} seconds. {pretty_time_delta(args.epochs*epoch_time)} estimated for full training.")
     epoch_loss = epoch_loss / num_training_sequences
     val_loss = generate.eval(
         model, criterion, dataset["validation"], args.batch_size, device,
@@ -108,6 +113,7 @@ def train(args):
     logging.info("Training model...")
     torch.autograd.set_detect_anomaly(True)
     opt = utils.prepare_optimizer(model, args.optimizer, args.lr)
+    start_time = time.perf_counter()
     for epoch in range(args.epochs):
         epoch_loss = 0
         model.train()
@@ -147,6 +153,8 @@ def train(args):
             f"Validation loss {val_loss} | "
             f"Iterations {iterations + 1}"
         )
+        epoch_time = int((time.perf_counter() - start_time) / (epoch + 1))
+        logging.info(f"Average epoch time: {pretty_time_delta(epoch_time)}. {pretty_time_delta((args.epochs - (epoch + 1)) * epoch_time)} estimated left.")
         if epoch % args.save_model_frequency == 0:
             _, rep = os.path.split(dataset_path.strip("/"))
             _, mae = test.test_model(
