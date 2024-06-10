@@ -32,7 +32,7 @@ class TrainDaemon:
                  (file_path.name.split('.')[0] == platform.node().lower()) or
                  (len(file_path.name.split('.')) < 3)))) and
              ((not file_path.suffix == ".done") or
-              (running and not file_path.suffix == ".running"))):
+              (running and file_path.suffix == ".running"))):
               return True
         return False
             
