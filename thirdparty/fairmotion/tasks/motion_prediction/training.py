@@ -44,7 +44,7 @@ def train(args):
     model_name = f"{dataset_name}_{args.representation}_{args.architecture}_{args.hidden_dim}hd_{args.num_layers}l"
     if "transformer" in args.architecture:
         model_name += f"_{args.num_heads}heads"
-    dataset_path = Path(args.preprocessed_path) / args.representation
+    dataset_path = str(Path(args.preprocessed_path) / args.representation)
     dest_model_path = str(Path(args.save_model_path) / model_name)
     
     fairmotion_utils.create_dir_if_absent(dest_model_path)
