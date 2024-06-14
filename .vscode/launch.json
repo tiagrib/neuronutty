@@ -52,14 +52,15 @@
             "justMyCode": false,
             "args": [   "train",
                         "--save-model-path", "z:/models",
-                        "--preprocessed-path", "C:/repo/shared/preprocessed/AMASS_JointLimit",
+                        "--preprocessed-path", "C:/repo/shared/preprocessed/AMASS_HEva",
                         "--epochs", "100", 
                         "--device", "cuda", 
                         "--save-model-frequency", "5", 
-                        "--architecture", "sttransformer",
+                        "--architecture", "transformer",
                         "--batch-size", "2",
-                        "--num-heads", "64",
-                        "--lr", "0.01",
+                        "--num-heads", "4",
+                        "--hidden-dim", "512",
+                        "--lr", "0.001",
                         "--representation", "aa"
                     ]        
         },
@@ -71,8 +72,8 @@
             "console": "integratedTerminal",
             "justMyCode": false,
             "args": [   "preprocess",
-                        "--input-dir", "C:/repo/shared/mocap/AMASS/Synthetic_60FPS/AMASS_ACCAD", 
-                        "--output-dir", "C:/repo/shared/preprocessed/AMASS_ACCAD", 
+                        "--input-dir", "C:/repo/shared/mocap/AMASS/Synthetic_60FPS/AMASS_HEva", 
+                        "--output-dir", "C:/repo/shared/preprocessed/AMASS_HEva", 
                         "--rep", "rotmat",
                         "--split-dir", "C:/repo/shared/mocap/AMASS/Synthetic_60FPS_fnames"
                     ]        

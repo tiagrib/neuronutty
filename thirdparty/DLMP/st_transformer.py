@@ -142,7 +142,7 @@ class TransformerSpatialTemporalModel(nn.Module):
         for i in range(max_len):
             src_slice_reshape = torch.reshape(src_slice, (B, T, S, E)) # 32 x 120 x 24 x 9
             projected_src = self.encoder(src_slice_reshape) * np.sqrt(self.ninp) # 32 x 120 x 24 x 128
-            encoder_output = self.pos_encoder(projected_src)# 32 x 24 x 120 x128
+            encoder_output = self.pos_encoder(projected_src)# 32 x 120 x 24 x 128
 
             for layer in self.layers:
                 encoder_output = layer(encoder_output)
