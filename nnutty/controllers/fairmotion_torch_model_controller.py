@@ -4,6 +4,7 @@ from pathlib import Path
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
+from torch.utils.tensorboard import SummaryWriter
 from nnutty.controllers.anim_file_controller import AnimFileController
 from nnutty.controllers.character_controller import CharCtrlType, CharacterSettings
 from nnutty.controllers.multi_anim_controller import MultiAnimController
@@ -16,6 +17,7 @@ from nnutty.tasks.model_mean_std import ModelMeanStd
 from nnutty.util.plot_data import PlotData, get_plot_data_from_poses
 from nnutty.util import amass_mean_std
 from thirdparty.fairmotion.tasks.motion_prediction.dataset import FORCE_DATA_TO_FLOAT32
+
 
 
 class FairmotionMultiController(MultiAnimController):
@@ -210,6 +212,9 @@ class FairmotionModelController(UncachedAnimController):
             .to(device="cpu")
             .numpy()
         )
+        writer = SummaryWriter("torchlogs/")
+        writer.add_graph(self.model, input_motion)
+        writer.close()
         pred_seq = utils.unnormalize(np.array(pred_seq), self.model_mean, self.model_std)
         pred_seq = utils.unflatten_angles(pred_seq, self.representation)
         if self.representation == "aa":

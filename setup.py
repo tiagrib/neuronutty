@@ -70,6 +70,7 @@ setup(
         "torch==2.3.0",
         "tqdm",
         "PySide6",
+        "tensorboard",
         "PyOpenGL==3.1.0",
         "PyOpenGL-accelerate",
         "body_visualizer @ git+https://github.com/nghorbani/body_visualizer.git@be9cf756f8d1daed870d4c7ad1aa5cc3478a546c",

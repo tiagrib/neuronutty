@@ -22,7 +22,7 @@ class Seq2Seq(nn.Module):
         for name, param in self.named_parameters():
             nn.init.uniform_(param.data, -0.08, 0.08)
 
-    def forward(self, src, tgt, max_len=None, teacher_forcing_ratio=0.5):
+    def forward(self, src, tgt = None, max_len=None, teacher_forcing_ratio=0.5):
         """
         Inputs:
             src: Source sequence provided as input to the encoder.
@@ -38,6 +38,8 @@ class Seq2Seq(nn.Module):
                 decoder input instead of predicted pose from previous time step
         """
         hidden, cell, outputs = self.encoder(src)
+        if tgt is None:
+            tgt = src[:, -1].unsqueeze(1)
         outputs = self.decoder(
             tgt, hidden, cell, max_len, teacher_forcing_ratio,
         )
