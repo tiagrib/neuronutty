@@ -46,7 +46,7 @@ ApplicationWindow {
                 return "char_ctrl_anim_file.qml";
             case "DIPController":
                 return "char_ctrl_dip.qml";
-            case "WaveController":
+            case "WaveAnimController":
                 return "char_ctrl_wave.qml";
 
             default:

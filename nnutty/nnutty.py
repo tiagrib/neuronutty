@@ -98,16 +98,19 @@ class NNutty(QtCore.QObject):
         with self.mutex_characters:
             self.characters.clear()
             self.characters.append(character)
-        if self.selected_folder is not None and self.get_first_character().controller.loads_folders():
+        if self.selected_folder is not None and self.get_first_controller().loads_folders():
             self.set_selected_folder(self.selected_folder)
             self._skip_selected_folder_reload = True
-        if self.selected_animation is not None and self.get_first_character().controller.loads_animations():
+        if self.selected_animation is not None and self.get_first_controller().loads_animations():
             self.set_selected_animation_file(self.selected_animation.parent, self.selected_animation.name, update_plots=True)
             self._skip_reload_animation = True
         self.charactersModified.emit()
 
-    def selected_character_invalid(self):
-        return self.characters is None or len(self.characters) == 0
+    def selected_character_invalid(self, controller_type=None):
+        return (self.characters is None or 
+                len(self.characters) == 0 or
+                (controller_type is not None and
+                 not isinstance(self.get_first_controller(), controller_type)))
 
     def get_characters(self):
         char_enum = None
@@ -120,6 +123,11 @@ class NNutty(QtCore.QObject):
         with self.mutex_characters:
             character = self.characters[0]
         return character
+    
+    def get_first_controller(self):
+        character = self.get_first_character()
+        if character: return character.controller
+        return None
 
     @QtCore.Slot()
     def add_animfile_character(self):
@@ -155,42 +163,42 @@ class NNutty(QtCore.QObject):
     def add_wave_character(self, model=None):
         logging.info("add_wave_character()")
         self.add_character(Character(body_model=None,
-                                     controller=WaveAnimController(self, model, CharacterSettings(args=self.args))))
+                                     controller=WaveAnimController(self, settings=CharacterSettings(args=self.args))))
 
 
     @QtCore.Slot(float, float, float)
     def set_character_world_position(self, x, y, z):
         if self.selected_character_invalid(): return
         logging.info(f"set_character_world_position: [{x}, {y}, {z}]")
-        self.get_first_character().controller.settings.set_world_offset([x, y, z])
+        self.get_first_controller().settings.set_world_offset([x, y, z])
 
     @QtCore.Slot(float)
     def set_character_scale(self, s):
         if self.selected_character_invalid(): return
         logging.info(f"set_character_scale: {s}")
-        self.get_first_character().controller.settings.set_scale(s)
+        self.get_first_controller().settings.set_scale(s)
 
 
     @QtCore.Slot(bool)
     def show_character_origin(self, show):
         if self.selected_character_invalid(): return
         logging.info(f"show_character_origin: {show}")
-        self.get_first_character().controller.settings.set_show_origin(show)
+        self.get_first_controller().settings.set_show_origin(show)
 
     @QtCore.Slot(result=bool)
     def get_show_character_origin(self):
         if self.selected_character_invalid(): return False
-        return self.get_first_character().controller.settings.show_origin
+        return self.get_first_controller().settings.show_origin
 
     @QtCore.Slot(result=str)
     def get_selected_character_controller_name(self):
         if self.selected_character_invalid(): return ""
-        return type(self.get_first_character().controller).__name__
+        return type(self.get_first_controller()).__name__
     
     @QtCore.Slot(result=str)
     def get_selected_character_controller_type_name(self):
         if self.selected_character_invalid(): return ""
-        return self.get_first_character().controller.ctrl_type.name
+        return self.get_first_controller().ctrl_type.name
     
     @QtCore.Slot(str, str, int)
     def set_selected_animation_file(self, folder, filename, controller_idx=0, update_plots=False):
@@ -202,8 +210,8 @@ class NNutty(QtCore.QObject):
         else:
             self.selected_animation = Path(folder) / filename
         if (self.selected_character_invalid() or 
-            not self.get_first_character().controller.loads_animations()): return
-        self.get_first_character().controller.load_anim_file(self.selected_animation, 
+            not self.get_first_controller().loads_animations()): return
+        self.get_first_controller().load_anim_file(self.selected_animation, 
                                                              controller_index=controller_idx, 
                                                              update_plots=update_plots)
 
@@ -214,21 +222,19 @@ class NNutty(QtCore.QObject):
             return
         self.selected_folder = Path(folder)
         if (self.selected_character_invalid() or 
-            not self.get_first_character().controller.loads_folders()): return
-        self.get_first_character().controller.load_model(self.selected_folder)
+            not self.get_first_controller().loads_folders()): return
+        self.get_first_controller().load_model(self.selected_folder)
 
     @QtCore.Slot(float)
     def set_fairmotion_model_prediction_ratio(self, ratio=0.9):
-        if (self.selected_character_invalid() or
-            not (type(self.get_first_character().controller) == FairmotionMultiController)): return
-        self.get_first_character().controller.set_prediction_ratio(ratio)
+        if (self.selected_character_invalid(FairmotionMultiController)): return
+        self.get_first_controller().set_prediction_ratio(ratio)
         self.plot1Updated.emit()
 
     @QtCore.Slot(result=float)
     def get_fairmotion_model_prediction_ratio(self):
-        if (self.selected_character_invalid() or
-            not (type(self.get_first_character().controller) == FairmotionMultiController)): return
-        return self.get_first_character().controller.get_prediction_ratio()
+        if (self.selected_character_invalid(FairmotionMultiController)): return
+        return self.get_first_controller().get_prediction_ratio()
     
     @QtCore.Slot(result=str)
     def get_supported_animation_files_extensions(self):
@@ -237,19 +243,53 @@ class NNutty(QtCore.QObject):
     @QtCore.Slot()
     def reset_playback(self):
         if self.selected_character_invalid(): return
-        return self.get_first_character().controller.reset()
+        return self.get_first_controller().reset()
     
     @QtCore.Slot(QtCore.QObject, bool)
     def display_all_models(self, folderModel, state:bool):
         if (self.selected_character_invalid() or 
             self.selected_folder is None or
-            not self.get_first_character().controller.loads_folders()): return
-        return self.get_first_character().controller.display_all_models(state, self.selected_folder, folderModel.items)
-        
+            not self.get_first_controller().loads_folders()): return
+        return self.get_first_controller().display_all_models(state, self.selected_folder, folderModel.items)
+    
+    @QtCore.Slot(float, float)
+    def wavectrl_add_joint(self, min_range, max_range):
+        if (self.selected_character_invalid(WaveAnimController)): return
+        self.get_first_controller().add_joint(min_range=min_range, max_range=max_range)
+
+    @QtCore.Slot(float)
+    def wavectrl_set_min_range(self, x):
+        if (self.selected_character_invalid(WaveAnimController)): return
+        self.get_first_controller().set_min_range(x)
+
+    @QtCore.Slot(float)
+    def wavectrl_set_max_range(self, x):
+        if (self.selected_character_invalid(WaveAnimController)): return
+        self.get_first_controller().set_max_range(x)
+
+    @QtCore.Slot(float)
+    def wavectrl_set_min_frequency(self, x):
+        if (self.selected_character_invalid(WaveAnimController)): return
+        self.get_first_controller().set_min_frequency(x)
+
+    @QtCore.Slot(float)
+    def wavectrl_set_max_frequency(self, x):
+        if (self.selected_character_invalid(WaveAnimController)): return
+        self.get_first_controller().set_max_frequency(x)
+
+    @QtCore.Slot()
+    def wavectrl_randomize_joints(self):
+        if (self.selected_character_invalid(WaveAnimController)): return
+        self.get_first_controller().randomize_joints()
+
+    @QtCore.Slot()
+    def wavectrl_reset_joints(self):
+        if (self.selected_character_invalid(WaveAnimController)): return
+        self.get_first_controller().clear_skeleton()
     
     def get_plot_data(self, index=0):
         if self.selected_character_invalid(): return
-        return self.get_first_character().controller.get_plot_data(index)
+        return self.get_first_controller().get_plot_data(index)
 
     def run(self):
         self.win.show()
