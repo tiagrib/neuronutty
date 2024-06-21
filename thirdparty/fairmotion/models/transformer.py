@@ -68,7 +68,9 @@ class TransformerLSTMModel(nn.Module):
         for name, param in self.decoder.named_parameters():
             nn.init.uniform_(param.data, -0.08, 0.08)
 
-    def forward(self, src, tgt, max_len=None, teacher_forcing_ratio=None):
+    def forward(self, src, tgt = None, max_len=None, teacher_forcing_ratio=None):
+        if tgt is None:
+            tgt = src[:, -1].unsqueeze(1)
         src = self.encoder(src) * np.sqrt(self.ninp)
         src = self.pos_encoder(src)
         output = self.transformer_encoder(src, mask=None)
@@ -131,7 +133,9 @@ class TransformerModel(nn.Module):
             if p.dim() > 1:
                 xavier_uniform_(p)
 
-    def forward(self, src, tgt, max_len=None, teacher_forcing_ratio=None):
+    def forward(self, src, tgt = None, max_len=None, teacher_forcing_ratio=None):
+        if tgt is None:
+            tgt = src[:, -1].unsqueeze(1)
         # Transformer expects src and tgt in format (len, batch_size, dim)
         src = src.transpose(0, 1)
         tgt = tgt.transpose(0, 1)

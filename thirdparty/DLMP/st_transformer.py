@@ -128,7 +128,9 @@ class TransformerSpatialTemporalModel(nn.Module):
             if p.dim() > 1:
                 xavier_uniform_(p)
 
-    def forward(self, src, tgt, max_len=None, teacher_forcing_ratio=1.):
+    def forward(self, src, tgt = None, max_len=None, teacher_forcing_ratio=1.):
+        if tgt is None:
+            tgt = src[:, -1].unsqueeze(1)
         if max_len is None:
             max_len = tgt.shape[1]
         if self.training:
