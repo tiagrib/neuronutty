@@ -66,7 +66,7 @@ class RNN(nn.Module):
             outputs[t] = output
         return outputs, state
 
-    def forward(self, src, tgt, max_len=None, teacher_forcing_ratio=0.5):
+    def forward(self, src, tgt = None, max_len=None, teacher_forcing_ratio=0.5):
         """
         Inputs:
             src, tgt: Tensors of shape (batch_size, seq_len, input_dim)
@@ -75,6 +75,8 @@ class RNN(nn.Module):
             teacher_forcing_ratio: Probability of feeding gold target pose as
                 decoder input instead of predicted pose from previous time step
         """
+        if tgt is None:
+            tgt = src[:, -1].unsqueeze(1)
         # convert src, tgt to (seq_len, batch_size, input_dim) format
         src = src.transpose(0, 1)
         tgt = tgt.transpose(0, 1)

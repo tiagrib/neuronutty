@@ -57,8 +57,10 @@ class TiedSeq2Seq(nn.Module):
         device: Optional; Device to be used "cuda" or "cpu"
     """
 
-    def __init__(self, input_dim, hidden_dim, num_layers, device):
+    def __init__(self, input_dim, hidden_dim, num_layers, device, output_dim=None):
         super(TiedSeq2Seq, self).__init__()
+        if output_dim is None:
+            output_dim = input_dim
         tied_lstm = nn.LSTM(
             input_size=input_dim,
             hidden_size=hidden_dim,
@@ -70,7 +72,7 @@ class TiedSeq2Seq(nn.Module):
         self.decoder = decoders.LSTMDecoder(
             input_dim=input_dim,
             hidden_dim=hidden_dim,
-            output_dim=input_dim,
+            output_dim=output_dim,
             device=device,
             lstm=tied_lstm,
         ).to(device)
@@ -79,7 +81,9 @@ class TiedSeq2Seq(nn.Module):
         for name, param in self.named_parameters():
             nn.init.uniform_(param.data, -0.08, 0.08)
 
-    def forward(self, src, tgt, max_len=None, teacher_forcing_ratio=0.5):
+    def forward(self, src, tgt = None, max_len=None, teacher_forcing_ratio=0.5):
+        if tgt is None:
+            tgt = src[:, -1].unsqueeze(1)
         hidden, cell, outputs = self.encoder(src)
         outputs = self.decoder(
             tgt, hidden, cell, max_len, teacher_forcing_ratio,
