@@ -256,7 +256,7 @@ class FairmotionModelController(UncachedAnimController):
             pred_seq = conversions.A2R(pred_seq)
         pred_seq = np.array(pred_seq)
         pred_seq = conversions.R2T(pred_seq)
-        self.computed_poses.clear()
+        self.computed_poses = []
         for i in range(self.num_ref_frames):
             self.computed_poses.append(self.anim_file_ctrl.motion.get_pose_by_frame(i))
         for i in range(self.num_predictions):
