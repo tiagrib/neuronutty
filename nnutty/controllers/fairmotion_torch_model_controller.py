@@ -110,6 +110,11 @@ class FairmotionModelController(UncachedAnimController):
         self.model_mean = amass_mean_std.AMASS_FULL_MEAN
         self.model_std = amass_mean_std.AMASS_FULL_STD
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.model_cache = {}
+        self.model_file_cache = {}
+        self.plot_data_cache = {}
+        self.current_model_path = None
+        self.num_predictions = 0
         if self.anim_file_ctrl is None:
             self.anim_file_ctrl = AnimFileController(settings=self.settings)
         else:
@@ -123,20 +128,34 @@ class FairmotionModelController(UncachedAnimController):
         if self.anim_file_ctrl is None or self.anim_file_ctrl.motion is None:
             return None
         
+        if (self.current_model_path in self.plot_data_cache and 
+                self.anim_file_ctrl.filename in self.plot_data_cache[self.current_model_path] and 
+                self.num_predictions in self.plot_data_cache[self.current_model_path][self.anim_file_ctrl.filename]):
+            return self.plot_data_cache[self.current_model_path][self.anim_file_ctrl.filename][self.num_predictions]
+        
         poses = self.computed_poses
 
         if poses:
-            return get_plot_data_from_poses(self.anim_file_ctrl.motion.skel, poses)
+            self.plot_data_cache[self.current_model_path][self.anim_file_ctrl.filename][self.num_predictions] = get_plot_data_from_poses(self.anim_file_ctrl.motion.skel, poses)
+            return self.plot_data_cache[self.current_model_path][self.anim_file_ctrl.filename][self.num_predictions]
         else:
             return None
 
-    def load_model(self, model_path:str, recompute:bool=True):
+    def load_model(self, model_path:str, recompute:bool=True):        
         model_path = Path(model_path)
         if model_path.is_dir():
             model_folder = model_path
             model_path = model_folder / "best.model"
         else:
             model_folder = model_path.parent
+
+        if model_path in self.model_cache:
+            self.model = self.model_cache[model_path]
+            self.current_model_path = model_path
+            logging.info(f"Model loaded into '{self.device}'.")
+            self.preprocess_motion()
+            self.recompute_prediction()
+            return
         
         config = TrainConfig.from_file(model_folder / "config.txt")
         logging.info(f"Model config: {config}")
@@ -167,6 +186,10 @@ class FairmotionModelController(UncachedAnimController):
         )
         self.model.load_state_dict(torch.load(model_path, map_location=self.device))
         self.model.eval()
+        self.model_cache[model_path] = self.model
+        self.model_file_cache[model_path] = {}
+        self.plot_data_cache[model_path] = {}
+        self.current_model_path = model_path
         logging.info(f"Model loaded into '{self.device}'.")
         if recompute:
             self.recompute_prediction()
@@ -179,6 +202,9 @@ class FairmotionModelController(UncachedAnimController):
         self.recompute_prediction()
 
     def preprocess_motion(self):
+        if self.current_model_path in self.model_file_cache and self.anim_file_ctrl.filename in self.model_file_cache[self.current_model_path]:
+            # if it's already cached then it's already preprocessed
+            return
         logging.info("Preprocessing motion...")
         self.preprocessed_motion = self.anim_file_ctrl.motion.rotations()
         if self.representation == "aa":
@@ -196,19 +222,28 @@ class FairmotionModelController(UncachedAnimController):
         if self.anim_file_ctrl.motion is None:
             return
         
-        num_predictions = int(self.prediction_ratio * self.anim_file_ctrl.motion.num_frames())
+        self.num_predictions = int(self.prediction_ratio * self.anim_file_ctrl.motion.num_frames())
         if "transformer" in type(self.model).__name__.lower():
-            num_predictions = self.anim_file_ctrl.motion.num_frames() - 120
-        logging.info(f"Running model for {num_predictions} frames...")
-        self.reference_anim_length = self.anim_file_ctrl.end_time - num_predictions/self.anim_file_ctrl.fps
-        self.num_ref_frames = self.anim_file_ctrl.motion.num_frames() - num_predictions
+            self.num_predictions = self.anim_file_ctrl.motion.num_frames() - 120
+        self.reference_anim_length = self.anim_file_ctrl.end_time - self.num_predictions/self.anim_file_ctrl.fps
+        self.num_ref_frames = self.anim_file_ctrl.motion.num_frames() - self.num_predictions
 
+        if self.current_model_path in self.model_file_cache and self.anim_file_ctrl.filename in self.model_file_cache[self.current_model_path]:
+            cached_predictions = self.model_file_cache[self.current_model_path][self.anim_file_ctrl.filename]
+            if self.num_predictions in cached_predictions:
+                self.computed_poses = cached_predictions[self.num_predictions]
+                self.nnutty.plot2Updated.emit()
+                logging.info(f"Prediction loaded from cache..")
+                return
+        
+        logging.info(f"Running model for {self.num_predictions} frames...")
+        
         if self.preprocessed_motion is None:
             self.preprocess_motion()
 
         input_motion = self.preprocessed_motion[:,:self.num_ref_frames,:]
         pred_seq = (
-            generate.generate(self.model, input_motion, num_predictions, self.device)
+            generate.generate(self.model, input_motion, self.num_predictions, self.device)
             .to(device="cpu")
             .numpy()
         )
@@ -224,12 +259,16 @@ class FairmotionModelController(UncachedAnimController):
         self.computed_poses.clear()
         for i in range(self.num_ref_frames):
             self.computed_poses.append(self.anim_file_ctrl.motion.get_pose_by_frame(i))
-        for i in range(num_predictions):
+        for i in range(self.num_predictions):
             self.computed_poses.append(Pose(self.anim_file_ctrl.motion.skel, pred_seq[0][i]))
         if self.parent:
             self.parent.reset()
         else:
             self.reset()
+        if self.anim_file_ctrl.filename not in self.model_file_cache[self.current_model_path]:
+            self.model_file_cache[self.current_model_path][self.anim_file_ctrl.filename] = {}
+            self.plot_data_cache[self.current_model_path][self.anim_file_ctrl.filename] = {}
+        self.model_file_cache[self.current_model_path][self.anim_file_ctrl.filename][self.num_predictions] = self.computed_poses
         self.nnutty.plot2Updated.emit()
 
     def set_prediction_ratio(self, ratio):
