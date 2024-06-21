@@ -60,7 +60,6 @@ class CachedAnimController(CharacterController):
             return None
         
         poses = [self.motion.get_pose_by_frame(f) for f in range(self.motion.num_frames())]
-
         return get_plot_data_from_poses(self.motion.skel, poses)
 
     

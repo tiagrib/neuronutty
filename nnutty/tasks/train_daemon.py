@@ -22,17 +22,16 @@ class TrainDaemon:
             watch_path = Path(watch_path)
         self.watch_path = watch_path
 
-    def is_valid(self, file_path, running=False, override_mine_only=None):
+    def is_valid(self, file_path, running_only=False, override_mine_only=None):
         mine_only = self.mine_only
         if override_mine_only is not None:
             mine_only = override_mine_only
         if (file_path.is_file() and 
             (not mine_only or
              (self.mine_only and (
-                 (file_path.name.split('.')[0] == platform.node().lower()) or
-                 (len(file_path.name.split('.')) < 3)))) and
-             ((not file_path.suffix == ".done") or
-              (running and file_path.suffix == ".running"))):
+                 (file_path.name.split('.')[0] == platform.node().lower())))) and
+             ((not running_only and not file_path.suffix == ".done") or
+              (running_only and file_path.suffix == ".running"))):
               return True
         return False
             
@@ -41,19 +40,31 @@ class TrainDaemon:
         filter_description = ("" if not self.mine_only else f"{platform.node().lower()}.") + f"*{CONFIG_EXTENSION}"
         logging.info(f"Watching {self.watch_path} for model configuration files matching: '{filter_description}'")
 
+        # reset abandoned files
         for path in self.watch_path.rglob("*"):
-            if self.is_valid(path, running=True, override_mine_only=True):
+            if self.is_valid(path, running_only=True, override_mine_only=True):
                 logging.info(f"Reset '{path}'.")
                 os.rename(path, path.with_name(f"{path.stem}.txt"))
 
         while True:
             found = False
-            for path in self.watch_path.rglob("*"):
-                if self.is_valid(path):
-                    self.run_job(path)
+            priority_paths = {}
+            for path in self.watch_path.glob("*"):
+                if path.is_dir() and path.name.isdigit():
+                    priority_paths[int(path.name)] = path
+            priority_paths[max(priority_paths.keys())+1] = self.watch_path
+
+            for _, prioritypath in sorted(priority_paths.items()):
+                for path in prioritypath.glob("*"):
+                    if path.is_file() and self.is_valid(path, override_mine_only=False):
+                        self.run_job(path)
+                        found = True
+                        break
+                if found:
+                    break
             if not found:
                 logging.info("No jobs found. Sleeping for 5 seconds...")
-            time.sleep(5)
+                time.sleep(5)
 
     def run_job(self, path):
         config = TrainConfig.from_file(path)

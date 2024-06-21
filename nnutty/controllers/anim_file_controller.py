@@ -34,30 +34,49 @@ class AnimFileController(CachedAnimController):
                  settings:CharacterSettings = None,
                  parent=None):
         super().__init__(nnutty, ctrl_type=CharCtrlType.ANIM_FILE, settings=settings, parent=parent)
+        self.caches = {}
+        self.plot_data_cache = {}
+        self.filename = None
         self.load_anim_file(filename)
-        
 
     def load_anim_file(self, filename:str, controller_index:int=0, update_plots:bool=False):
-        motion = None
-        if filename:
-            if not isinstance(filename, list):
-                if filename.suffix.lower() == ".bvh":
-                    motion = bvh.load(file=filename)
-                    motion.name = filename.name
-                elif filename.suffix.lower() in [".pkl", ".npz"]:
-                    motion = amass_dip.load(filename, file_type=filename.suffix.lower()[1:])
-                    motion.name = filename.name
-            elif (isinstance(filename, list) and len(filename) == 2 and 
-                    filename[0] is not None and filename[1] is not None and
-                    filename[0].lower().endswith(".asf") and filename[0].lower().endswith(".asc")):
-                motion = asfamc.load(file=filename[0], motion=filename[1])
+        if filename in self.caches:
+            self.motion = self.caches[filename]
+            self.filename = filename
+        else:        
+            motion = None
+            if filename:
+                if not isinstance(filename, list):
+                    if filename.suffix.lower() == ".bvh":
+                        motion = bvh.load(file=filename)
+                        motion.name = filename.name
+                    elif filename.suffix.lower() in [".pkl", ".npz"]:
+                        motion = amass_dip.load(filename, file_type=filename.suffix.lower()[1:])
+                        motion.name = filename.name
+                elif (isinstance(filename, list) and len(filename) == 2 and 
+                        filename[0] is not None and filename[1] is not None and
+                        filename[0].lower().endswith(".asf") and filename[0].lower().endswith(".asc")):
+                    motion = asfamc.load(file=filename[0], motion=filename[1])
 
-        if motion:
-            self.digest_fairmotion(motion)
-            logging.info(f"Loaded animation file: '{filename}'")
-
+            if motion:
+                self.digest_fairmotion(motion)
+                logging.info(f"Loaded animation file: '{filename}'")
+                self.caches[filename] = self.motion
+                self.filename = filename
+        if self.motion:
             if update_plots or controller_index == 0:
                 self.nnutty.plot1Updated.emit()
             if update_plots or controller_index == 1:
                 self.nnutty.plot2Updated.emit()
+
+    def get_plot_data(self, index=0):
+        if self.filename in self.plot_data_cache:
+            res = self.plot_data_cache[self.filename]
+        else:
+            res = super().get_plot_data(index)
+            if res is not None:
+                self.plot_data_cache[self.filename] = res
+        return res
+
+        
 
