@@ -63,7 +63,6 @@ def train(args):
     logging.info(f"Using device: {device}")
 
     logging.info("Preparing dataset...")
-    dataset, mean_src, std_src, mean_tgt, std_tgt = utils.prepare_dataset(
     dataset, mean, std = utils.prepare_dataset(
         *[
             os.path.join(dataset_path, f"{split}.pkl")
