@@ -187,7 +187,7 @@ def preprocess(args):
     train_dataset = process_split(
         train_ftuples,
         os.path.join(output_path, "train.pkl"),
-        rep=args.rep,
+        rep=args.representation,
         file_type=args.file_type,
         src_len=args.src_len,
         tgt_len=args.tgt_len,
@@ -200,7 +200,7 @@ def preprocess(args):
     process_split(
         validation_ftuples,
         os.path.join(output_path, "validation.pkl"),
-        rep=args.rep,
+        rep=args.representation,
         file_type=args.file_type,
         src_len=args.src_len,
         tgt_len=args.tgt_len,
@@ -213,7 +213,7 @@ def preprocess(args):
     process_split(
         test_ftuples,
         os.path.join(output_path, "test.pkl"),
-        rep=args.rep,
+        rep=args.representation,
         file_type=args.file_type,
         src_len=args.src_len,
         tgt_len=args.tgt_len,

@@ -164,11 +164,10 @@ def train(args):
         epoch_time = int((time.perf_counter() - start_time) / (epoch + 1))
         logging.info(f"Average epoch time: {pretty_time_delta(epoch_time)}. {pretty_time_delta((args.epochs - (epoch + 1)) * epoch_time)} estimated left.")
         if epoch % args.save_model_frequency == 0:
-            _, rep = os.path.split(dataset_path.strip("/"))
             _, mae = test.test_model(
                 model=model,
                 dataset=dataset["validation"],
-                rep=rep,
+                rep=args.representation,
                 device=device,
                 mean=mean,
                 std=std,
