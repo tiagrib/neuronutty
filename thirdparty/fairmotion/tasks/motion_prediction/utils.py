@@ -104,14 +104,16 @@ def prepare_dataset(
     for split, split_path in zip(
         ["train", "test", "validation"], [train_path, valid_path, test_path]
     ):
-        mean, std = None, None
+        mean_src, std_src, mean_tgt, std_tgt = None, None, None, None
         if split in ["test", "validation"]:
-            mean = dataset["train"].dataset.mean
-            std = dataset["train"].dataset.std
+            mean_src = dataset["train"].dataset.mean_src
+            std_src = dataset["train"].dataset.std_src
+            mean_tgt = dataset["train"].dataset.mean_tgt
+            std_tgt = dataset["train"].dataset.std_tgt
         dataset[split] = motion_dataset.get_loader(
-            split_path, batch_size, device, mean, std, shuffle,
+            split_path, batch_size, device, None, None, shuffle,
         )
-    return dataset, mean, std
+    return dataset, mean_src, std_src, mean_tgt, std_tgt
 
 
 def prepare_model(
@@ -120,9 +122,12 @@ def prepare_model(
     num_layers=1, 
     ninp=128, 
     num_heads=4,
-    src_length=120
+    src_length=120,
+    output_dim=None
 ):
     architecture = architecture.lower()
+    if output_dim is None:
+        output_dim = input_dim
     if architecture == "rnn":
         model = rnn.RNN(input_dim, hidden_dim, num_layers)
     if architecture == "seq2seq":
@@ -132,7 +137,7 @@ def prepare_model(
         dec = decoders.LSTMDecoder(
             input_dim=input_dim,
             hidden_dim=hidden_dim,
-            output_dim=input_dim,
+            output_dim=output_dim,
             device=device,
         ).to(device)
         model = seq2seq.Seq2Seq(enc, dec)

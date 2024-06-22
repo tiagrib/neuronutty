@@ -17,6 +17,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/__main__.py",
             "console": "integratedTerminal",
+            "justMyCode": false,
             "args": [ ]
         },
         {
@@ -56,12 +57,13 @@
                         "--epochs", "100", 
                         "--device", "cuda", 
                         "--save-model-frequency", "5", 
-                        "--architecture", "transformer",
-                        "--batch-size", "2",
+                        "--architecture", "seq2seq",
+                        "--batch-size", "1",
                         "--num-heads", "4",
                         "--hidden-dim", "512",
                         "--lr", "0.001",
-                        "--representation", "aa"
+                        "--representation", "aa",
+                        "--transitional"
                     ]        
         },
         {
@@ -72,10 +74,16 @@
             "console": "integratedTerminal",
             "justMyCode": false,
             "args": [   "preprocess",
-                        "--input-dir", "C:/repo/shared/mocap/AMASS/Synthetic_60FPS/AMASS_HEva", 
-                        "--output-dir", "C:/repo/shared/preprocessed/AMASS_HEva", 
-                        "--rep", "rotmat",
-                        "--split-dir", "C:/repo/shared/mocap/AMASS/Synthetic_60FPS_fnames"
+                        "--input-dir", "C:/repo/shared/mocap/AMASS/Synthetic_60FPS/AMASS_Transition", 
+                        "--output-dir", "C:/repo/shared/preprocessed/AMASS_Transition", 
+                        "--rep", "aa",
+                        "--split-dir", "C:/repo/shared/mocap/AMASS/Synthetic_60FPS_fnames",
+                        "--transitional",
+                        "--src-len", "5",
+                        "--tgt-len", "5",
+                        "--num-cpus", "1",
+                        "--window-size", "30",
+                        "--window-stride", "30",
                     ]        
         }
     ]

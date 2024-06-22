@@ -7,7 +7,7 @@ import os
 import pickle
 
 from fairmotion.data import amass_dip
-from fairmotion.ops import motion as motion_ops
+from fairmotion.ops import math, motion as motion_ops
 from fairmotion.tasks.motion_prediction import utils
 from fairmotion.utils import utils as fairmotion_utils
 
@@ -32,36 +32,64 @@ def split_into_windows(motion, window_size, stride):
     return motion_ws
 
 
-def process_file(ftuple, file_type, create_windows, convert_fn, lengths):
+def process_file(ftuple, file_type, create_windows, convert_fn, lengths, transitional=False):
     src_len, tgt_len = lengths
     filepath, file_id = ftuple
     motion = amass_dip.load(filepath, file_type)
     motion.name = file_id
+
+    if create_windows is None and transitional:
+        create_windows = (src_len*10, src_len*10)
 
     if create_windows is not None:
         window_size, window_stride = create_windows
         if motion.num_frames() < window_size:
             return [], []
         matrices = [
-            convert_fn(motion.rotations())
-            for motion in split_into_windows(
+            convert_fn(motion_window.rotations()).reshape((motion_window.num_frames(), -1))
+            for motion_window in split_into_windows(
                 motion, window_size, window_stride
             )
         ]
     else:
-        matrices = [convert_fn(motion.rotations())]
+        matrices = [convert_fn(motion.rotations()).reshape((motion.num_frames(), -1))]
+    
+    if transitional:
+        src_mtx = []
+        tgt_mtx = []
+        out_len = tgt_len
+        num_windows = len(matrices)
+        if (create_windows is not None and
+                motion.num_frames()-window_stride*num_windows > src_len + tgt_len): # can add an extra window with the remaining frames
+            last_frame = motion.rotations()[window_stride*num_windows:]
+            last_frame = convert_fn(last_frame).reshape((last_frame.shape[0], -1))
+            matrices.append(last_frame)
+        fade = np.square(np.linspace(1, 0, window_size - out_len - tgt_len + 1))
+        for m in matrices:
+            len_m = len(m)
+            for src_start in range(0, len_m - src_len - tgt_len + 1):
+                output = m[src_start + src_len:src_start + src_len + out_len, ...]
+                const_output = np.repeat(m[src_start + src_len - 1][np.newaxis, :], out_len, 0)
+                src_input = m[src_start:src_start + src_len, ...]
+                for i in range(len_m - tgt_len - (src_start + src_len) + 1):
+                    tgt_start = i + src_start + src_len
+                    weight = fade[i]
+                    tgt_input = m[tgt_start:tgt_start + tgt_len, ...]
+                    src_mtx.append(np.concatenate((src_input, tgt_input),1))
+                    tgt_mtx.append(np.concatenate((math.lerp(output, const_output, weight), tgt_input), 1))
+                    pass
+                
+            
+    else:
+        src_mtx = [matrix[:src_len, ...] for matrix in matrices]
+        tgt_mtx = [matrix[src_len : src_len + tgt_len, ...] for matrix in matrices]
+
     logging.info(f"Processed {file_id}")
-    return (
-        [matrix[:src_len, ...].reshape((src_len, -1)) for matrix in matrices],
-        [
-            matrix[src_len : src_len + tgt_len, ...].reshape((tgt_len, -1))
-            for matrix in matrices
-        ],
-    )
+    return (src_mtx, tgt_mtx)
 
 
 def process_split(
-    all_fnames, output_path, rep, file_type, src_len, tgt_len, create_windows=None,
+    all_fnames, output_path, rep, file_type, src_len, tgt_len, create_windows=None, transitional=False, num_cpus=40
 ):
     """
     Process data into numpy arrays.
@@ -79,21 +107,35 @@ def process_split(
     """
     assert rep in ["aa", "rotmat", "quat"]
     convert_fn = utils.convert_fn_from_R(rep)
-
-    data = fairmotion_utils.run_parallel(
-        process_file,
-        all_fnames,
-        num_cpus=40,
-        file_type=file_type,
-        create_windows=create_windows,
-        convert_fn=convert_fn,
-        lengths=(src_len, tgt_len),
-    )
     src_seqs, tgt_seqs = [], []
-    for worker_data in data:
-        s, t = worker_data
-        src_seqs.extend(s)
-        tgt_seqs.extend(t)
+    if num_cpus == 1:
+        for ftuple in all_fnames:
+            data = process_file(
+                ftuple,
+                file_type,
+                create_windows,
+                convert_fn,
+                (src_len, tgt_len),
+                transitional,
+            )
+            src_seqs.extend(data[0])
+            tgt_seqs.extend(data[1])
+    else:
+        data = fairmotion_utils.run_parallel(
+            process_file,
+            all_fnames,
+            num_cpus=num_cpus,
+            file_type=file_type,
+            create_windows=create_windows,
+            convert_fn=convert_fn,
+            lengths=(src_len, tgt_len),
+            transitional=transitional,
+        )
+        
+        for worker_data in data:
+            s, t = worker_data
+            src_seqs.extend(s)
+            tgt_seqs.extend(t)
     logging.info(f"Processed {len(src_seqs)} sequences")
     pickle.dump((src_seqs, tgt_seqs), open(output_path, "wb"))
 
@@ -137,6 +179,8 @@ def preprocess(args):
             pass
 
     output_path = os.path.join(args.output_dir, args.rep)
+    if args.transitional:
+        output_path = output_path + "_transitional"
     fairmotion_utils.create_dir_if_absent(output_path)
 
     logging.info("Processing training data...")
@@ -148,6 +192,8 @@ def preprocess(args):
         src_len=args.src_len,
         tgt_len=args.tgt_len,
         create_windows=(args.window_size, args.window_stride),
+        transitional=args.transitional,
+        num_cpus=args.num_cpus
     )
 
     logging.info("Processing validation data...")
@@ -159,6 +205,8 @@ def preprocess(args):
         src_len=args.src_len,
         tgt_len=args.tgt_len,
         create_windows=(args.window_size, args.window_stride),
+        transitional=args.transitional,
+        num_cpus=args.num_cpus
     )
 
     logging.info("Processing test data...")
@@ -170,6 +218,8 @@ def preprocess(args):
         src_len=args.src_len,
         tgt_len=args.tgt_len,
         create_windows=(args.window_size, args.window_stride),
+        transitional=args.transitional,
+        num_cpus=args.num_cpus
     )
 
 
@@ -227,6 +277,11 @@ if __name__ == "__main__":
         help="Dataset file type.",
         choices=["pkl", "npz"],
         default="pkl",
+    )
+    parser.add_argument(
+        "--transitional", 
+        action='store_true', 
+        help="Use this option to train a transitional model instead of a predictive one",
     )
 
     args = parser.parse_args()

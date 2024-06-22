@@ -36,6 +36,15 @@ def slerp(R1, R2, t):
         R1, conversions.A2R(t * conversions.R2A(np.dot(R1.transpose(), R2)))
     )
 
+def slerp_aa(A1, A2, t):
+    """
+    Spherical linear interpolation (https://en.wikipedia.org/wiki/Slerp)
+    between A1 and A2 with parameter t, 0 ≤ t ≤ 1
+    """
+    return np.dot(
+        R1, conversions.A2R(t * conversions.R2A(np.dot(Q1.transpose(), R2)))
+    )
+
 
 def lerp(v0, v1, t):
     """

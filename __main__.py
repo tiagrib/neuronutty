@@ -24,6 +24,18 @@ def make_parser():
     compute_means = subparsers.add_parser('means', help='Compute mean and std for each model.')
     datasetinfo = subparsers.add_parser('dataset_info', help='Show info about datasets')
 
+    # Common arguments for all parsers
+    for subparser in [train, preprocess, test, train_daemon, compute_means, datasetinfo]:
+        subparser.add_argument(
+            "--num-cpus", type=int, help="Number of parallell tasks to spawn", default=40,
+        )
+
+    # Common arguments for train and preprocess
+    for subparser in [train, preprocess]:
+        subparser.add_argument(
+            "--transitional", action='store_true', help="Use this option to train a transitional model instead of a predictive one",
+        )
+
     # Common arguments for train and test
     for subparser in [train, test]:
         subparser.add_argument(

@@ -11,22 +11,29 @@ FORCE_DATA_TO_FLOAT32 = True
 class Dataset(data.Dataset):
     def __init__(self, dataset_path, device, mean=None, std=None):
         self.src_seqs, self.tgt_seqs = pickle.load(open(dataset_path, "rb"))
+        if len(self.src_seqs) == 0:
+            mean = 0
+            std = 0
         if mean is None or std is None:
-            self.mean = np.mean(self.src_seqs, axis=(0, 1))
-            self.std = np.std(self.src_seqs, axis=(0, 1))
+            self.mean_src = np.mean(self.src_seqs, axis=(0, 1))
+            self.std_src = np.std(self.src_seqs, axis=(0, 1))
+            self.mean_tgt = np.mean(self.tgt_seqs, axis=(0, 1))
+            self.std_tgt = np.std(self.tgt_seqs, axis=(0, 1))
         else:
-            self.mean = mean
-            self.std = std
+            self.mean_src = mean
+            self.std_src = std
+            self.mean_tgt = mean
+            self.std_tgt = std
         self.num_total_seqs = len(self.src_seqs)
         self.device = device
 
     def __getitem__(self, index):
         """Returns one data pair (source, target)."""
-        src_seq = (self.src_seqs[index] - self.mean) / (
-            self.std + constants.EPSILON
+        src_seq = (self.src_seqs[index] - self.mean_src) / (
+            self.std_src + constants.EPSILON
         )
-        tgt_seq = (self.tgt_seqs[index] - self.mean) / (
-            self.std + constants.EPSILON
+        tgt_seq = (self.tgt_seqs[index] - self.mean_tgt) / (
+            self.std_tgt + constants.EPSILON
         )
         
         if FORCE_DATA_TO_FLOAT32:

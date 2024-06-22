@@ -17,6 +17,7 @@ from nnutty.tasks.model_mean_std import ModelMeanStd
 from nnutty.util.plot_data import PlotData, get_plot_data_from_poses
 from nnutty.util import amass_mean_std
 from thirdparty.fairmotion.tasks.motion_prediction.dataset import FORCE_DATA_TO_FLOAT32
+import time
 
 
 
@@ -120,7 +121,7 @@ class FairmotionModelController(UncachedAnimController):
         else:
             self.reference_anim_length = self.anim_file_ctrl.end_time
             self.fps = self.anim_file_ctrl.fps
-            
+        self.model_name = ""
         if model_path:
             self.load_model(model_path,recompute=recompute)
 
@@ -162,7 +163,8 @@ class FairmotionModelController(UncachedAnimController):
 
         mean_std = ModelMeanStd(model_folder)
         mean_std.load()
-        self.model_mean, self.model_std = mean_std.mean, mean_std.std
+        self.model_mean_src, self.model_std_src = mean_std.mean_src, mean_std.std_src
+        self.model_mean_tgt, self.model_std_tgt = mean_std.mean_tgt, mean_std.std_tgt
 
         if config.representation != self.representation:
             self.preprocessed_motion = None
@@ -191,6 +193,9 @@ class FairmotionModelController(UncachedAnimController):
         self.plot_data_cache[model_path] = {}
         self.current_model_path = model_path
         logging.info(f"Model loaded into '{self.device}'.")
+
+        self.model_name = model_folder.name
+
         if recompute:
             self.recompute_prediction()
 
@@ -242,14 +247,16 @@ class FairmotionModelController(UncachedAnimController):
             self.preprocess_motion()
 
         input_motion = self.preprocessed_motion[:,:self.num_ref_frames,:]
+        writer = SummaryWriter("torchlogs/" + self.model_name + "_" + time.strftime("%Y%m%d-%H%M%S") + "/")
+        writer.add_graph(self.model, input_motion)
+        writer.close()
         pred_seq = (
             generate.generate(self.model, input_motion, self.num_predictions, self.device)
             .to(device="cpu")
             .numpy()
         )
-        writer = SummaryWriter("torchlogs/")
-        writer.add_graph(self.model, input_motion)
-        writer.close()
+        
+        
         pred_seq = utils.unnormalize(np.array(pred_seq), self.model_mean, self.model_std)
         pred_seq = utils.unflatten_angles(pred_seq, self.representation)
         if self.representation == "aa":

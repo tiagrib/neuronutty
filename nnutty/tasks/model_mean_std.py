@@ -15,17 +15,21 @@ logging.basicConfig(
 )
 
 class ModelMeanStd:
-    def __init__(self, path=None, mean=None, std=None):
+    def __init__(self, path=None, mean_src=None, std_src=None, mean_tgt=None, std_tgt=None):
         self.path = Path(path)
         if self.path.is_file():
             self.path = self.path.parent
 
-        self.mean = mean
-        self.std = std
+        self.mean_src = mean_src
+        self.std_src = std_src
+        self.mean_tgt = mean_tgt
+        self.std_tgt = std_tgt
         self.data = {
             "model_name": self.path.stem,
-            "mean": mean,
-            "std": std
+            "mean_src": mean_src,
+            "std_src": std_src,
+            "mean_tgt": mean_tgt,
+            "std_tgt": std_tgt
         }
 
     def compute_all_and_save(self):
@@ -44,8 +48,16 @@ class ModelMeanStd:
             self.dump()
         else:
             self.data = pickle.load(open(self.path / DATA_FILENAME, "rb"))
-            self.mean = self.data["mean"]
-            self.std = self.data["std"]
+            if "mean" in self.data:
+                self.mean_src = self.data["mean"]
+                self.std_src = self.data["std"]
+                self.mean_tgt = self.data["mean"]
+                self.std_tgt = self.data["std"]
+            else:
+                self.mean_src = self.data["mean_src"]
+                self.std_src = self.data["std_src"]
+                self.mean_tgt = self.data["mean_tgt"]
+                self.std_tgt = self.data["std_tgt"]
             self.model_name = self.data["model_name"]
             logging.info(f"Loaded mean-std for '{self.path.stem}'.")
 
@@ -56,11 +68,14 @@ class ModelMeanStd:
 
         train_data = os.path.join(Path(config.preprocessed_path) / config.representation, f"train.pkl")
         dataset = Dataset(train_data, config.device)
-        mean, std = dataset.mean, dataset.std
+        mean_src, std_src = dataset.mean_src, dataset.std_src
+        mean_tgt, std_tgt = dataset.mean_tgt, dataset.std_tgt
         self.data = {
             "model_name": model_path.stem,
-            "mean": mean,
-            "std": std
+            "mean_src": mean_src,
+            "std_src": std_src,
+            "mean_tgt": mean_tgt,
+            "std_tgt": std_tgt
         }
 
     def dump(self, data_filename=None):
