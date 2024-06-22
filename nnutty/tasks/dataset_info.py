@@ -36,7 +36,7 @@ class DatasetInfo:
                     
 
     def print_stats(self, dataset_path):
-        dataset, _, _, _, _ = utils.prepare_dataset(
+        dataset, _, _ = utils.prepare_dataset(
             *[dataset_path / file for file in DATASET_FILES],
             batch_size=32,
             device="cuda",

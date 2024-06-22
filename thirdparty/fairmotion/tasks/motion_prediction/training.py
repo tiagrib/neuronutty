@@ -64,6 +64,7 @@ def train(args):
 
     logging.info("Preparing dataset...")
     dataset, mean_src, std_src, mean_tgt, std_tgt = utils.prepare_dataset(
+    dataset, mean, std = utils.prepare_dataset(
         *[
             os.path.join(dataset_path, f"{split}.pkl")
             for split in ["train", "test", "validation"]
@@ -73,7 +74,7 @@ def train(args):
         shuffle=args.shuffle,
     )
 
-    mean_std = ModelMeanStd(args.save_model_path, mean_src=mean_src, std_src=std_src, mean_tgt=mean_tgt, std_tgt=std_tgt)
+    mean_std = ModelMeanStd(args.save_model_path, mean=mean, std=std)
     mean_std.dump()
 
     # Loss per epoch is the average loss per sequence

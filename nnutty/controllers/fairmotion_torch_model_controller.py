@@ -163,8 +163,7 @@ class FairmotionModelController(UncachedAnimController):
 
         mean_std = ModelMeanStd(model_folder)
         mean_std.load()
-        self.model_mean_src, self.model_std_src = mean_std.mean_src, mean_std.std_src
-        self.model_mean_tgt, self.model_std_tgt = mean_std.mean_tgt, mean_std.std_tgt
+        self.model_mean, self.model_std = mean_std.mean, mean_std.std
 
         if config.representation != self.representation:
             self.preprocessed_motion = None

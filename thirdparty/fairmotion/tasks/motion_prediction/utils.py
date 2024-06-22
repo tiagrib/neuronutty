@@ -104,16 +104,14 @@ def prepare_dataset(
     for split, split_path in zip(
         ["train", "test", "validation"], [train_path, valid_path, test_path]
     ):
-        mean_src, std_src, mean_tgt, std_tgt = None, None, None, None
+        mean, std = None, None
         if split in ["test", "validation"]:
-            mean_src = dataset["train"].dataset.mean_src
-            std_src = dataset["train"].dataset.std_src
-            mean_tgt = dataset["train"].dataset.mean_tgt
-            std_tgt = dataset["train"].dataset.std_tgt
+            mean = dataset["train"].dataset.mean
+            std = dataset["train"].dataset.std
         dataset[split] = motion_dataset.get_loader(
-            split_path, batch_size, device, None, None, shuffle,
+            split_path, batch_size, device, mean, std, shuffle,
         )
-    return dataset, mean_src, std_src, mean_tgt, std_tgt
+    return dataset, mean, std
 
 
 def prepare_model(
