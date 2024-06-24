@@ -212,15 +212,16 @@ class NNutty(QtCore.QObject):
         if self._skip_reload_animation:
             self._skip_reload_animation = False
             return
-        if folder is None or filename is None: 
-            self.selected_animation = None
-        else:
-            self.selected_animation = Path(folder) / filename
+        if controller_idx == 0:
+            if folder is None or filename is None: 
+                self.selected_animation = None
+            else:
+                self.selected_animation = Path(folder) / filename
         if (self.selected_character_invalid() or 
             not self.get_first_controller().loads_animations()): return
-        self.get_first_controller().load_anim_file(self.selected_animation, 
-                                                             controller_index=controller_idx, 
-                                                             update_plots=update_plots)
+        self.get_first_controller().load_anim_file(Path(folder) / filename, 
+                                                    controller_index=controller_idx, 
+                                                    update_plots=update_plots)
 
     @QtCore.Slot(str, int)
     def set_selected_folder(self, folder, controller_idx=0):
@@ -293,6 +294,11 @@ class NNutty(QtCore.QObject):
     def wavectrl_reset_joints(self):
         if (self.selected_character_invalid(WaveAnimController)): return
         self.get_first_controller().clear_skeleton()
+
+    @QtCore.Slot()
+    def trigger_secondary_animation(self):
+        if (self.selected_character_invalid(FairmotionInterpolativeController)): return
+        self.get_first_controller().trigger_secondary()
     
     def get_plot_data(self, index=0):
         if self.selected_character_invalid(): return

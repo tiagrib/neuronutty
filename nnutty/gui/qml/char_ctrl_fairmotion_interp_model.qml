@@ -27,45 +27,73 @@ GroupBox {
         }
 
         RowLayout {
-            spacing: 10
+            Button {
+                text: "Trigger Transition"
+                onClicked: nnutty.trigger_secondary_animation()
+            }
+        }
+
+        RowLayout {
+            id: rowFIM
+            spacing: 0
             Layout.fillWidth: true
             Layout.fillHeight: true
 
-            ColumnLayout {
-                id: colPlot1
+            Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
+                Layout.preferredWidth: parent.width * 0.35
 
-                Label {
-                    text: "Reference"
-                    Layout.fillWidth: true
-                }
-            
-                MatplotlibItem {
-                    id: matplotlibItem1
+                ColumnLayout {
+                    id: colPlot1
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    display_width: 700
-                    display_height: 500
+
+                    Label {
+                        text: "Reference"
+                        Layout.fillWidth: true
+                    }
+                
+                    MatplotlibItem {
+                        id: matplotlibItem1
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        display_width: 500
+                        display_height: 500
+                    }
                 }
             }
 
-            ColumnLayout {
-                id: colPlot2
+            Loader {
+                id: secondaryAnimFileListLoader
                 Layout.fillWidth: true
                 Layout.fillHeight: true
+                Layout.preferredWidth: parent.width * 0.3
+                source: "anim_file_list_2.qml"
+            }
 
-                Label {
-                    text: "Generated"
-                    Layout.fillWidth: true
-                }
+            Item {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                Layout.preferredWidth: parent.width * 0.35
 
-                MatplotlibItem {
-                    id: matplotlibItem2
+                ColumnLayout {
+                    id: colPlot2
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    display_width: 700
-                    display_height: 500
+
+                    Label {
+                        text: "Generated"
+                        Layout.fillWidth: true
+                    }
+
+                    MatplotlibItem {
+                        id: matplotlibItem2
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        display_width: 500
+                        display_height: 500
+                    }
                 }
             }
         }
