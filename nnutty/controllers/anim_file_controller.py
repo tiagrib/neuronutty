@@ -16,7 +16,6 @@ class DualAnimFileController(MultiAnimController):
                                 AnimFileController(nnutty, settings=CharacterSettings.copy(settings), parent=self)],
                          settings=settings,
                          parent=parent)
-        self.ctrl_type = CharCtrlType.DUAL_ANIM_FILE
         
     def loads_animations(self):
         return True

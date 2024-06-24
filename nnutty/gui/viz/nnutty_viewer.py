@@ -136,7 +136,7 @@ class NNuttyViewer(glut_viewer.Viewer):
             controllers = character.controller
             poses = character.get_pose()
             colors = character.get_color()
-            if character.controller.ctrl_type in [CharCtrlType.MULTI , CharCtrlType.DUAL_ANIM_FILE]:
+            if character.controller.ctrl_type in [CharCtrlType.MULTI]:
                 controllers = character.controller.get_controllers()    
             else:
                 poses = [character.get_pose()]

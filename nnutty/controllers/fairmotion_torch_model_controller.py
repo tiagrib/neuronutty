@@ -32,7 +32,6 @@ class FairmotionMultiController(MultiAnimController):
                          ctrls=[animctrl, fmctrl],
                          settings=settings,
                          parent=parent)
-        self.ctrl_type = CharCtrlType.DUAL_ANIM_FILE
         self.model_ctrls = [self.ctrls[1]]
         
     def loads_animations(self):
