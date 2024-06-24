@@ -12,8 +12,15 @@ GroupBox {
     property int selected_controller: 0
     property alias folderTreeModel: listView.model
 
+    function setFolderFilenamesFilter(filterString) {
+        folderModel.filter = filterString;
+    }
+
+    function setConfigFilter(filterString) {
+        folderModel.config_filter = filterString;
+    }
+
     ColumnLayout {
-        id: colLayout
         anchors.fill: parent
 
         TextField {
@@ -46,7 +53,6 @@ GroupBox {
         }
 
         ScrollView {
-            id: scrollView
             Layout.fillWidth: true
             Layout.fillHeight: true
 
@@ -58,8 +64,8 @@ GroupBox {
                 model: FolderTreeModel {
                     id: folderModel
                     folder: pathField.text
-                    filter: "$$^((?!tran_).)*\.model$"
-                    config_filter: "!{\"transitional\": \"true\"}"
+                    filter: ""
+                    config_filter: ""
                 }
 
                 delegate: Item {

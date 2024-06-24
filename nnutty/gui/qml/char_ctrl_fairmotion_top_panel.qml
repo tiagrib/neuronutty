@@ -12,8 +12,8 @@ RowLayout {
     Material.theme: Material.Dark
 
     function getFolderTreeModel() {
-        if (anim2FileListLoader.children.length > 0 && anim2FileListLoader.children[0].folderTreeModel !== undefined) {
-            return anim2FileListLoader.children[0].folderTreeModel;
+        if (modelsFolderListLoader.children.length > 0 && modelsFolderListLoader.children[0].folderTreeModel !== undefined) {
+            return modelsFolderListLoader.children[0].folderTreeModel;
         } else {
             console.error("No folderTreeModel found");
             return null;
@@ -36,9 +36,18 @@ RowLayout {
         Layout.fillHeight: true
         color: "transparent"
         Loader {
-            id: anim2FileListLoader
+            id: modelsFolderListLoader
             anchors.fill: parent
             source: "folder_list.qml"
+            onLoaded: {
+                item.setFolderFilenamesFilter("$$^((?!tran_).)*\.model$")
+                item.setConfigFilter("!{\"transitional\": \"true\"}")
+            }
         }
+    }
+
+    Component.onCompleted: {
+        var folderTreeModel = getFolderTreeModel();
+        console.log("filter: " + folderTreeModel.filter);
     }
 }
