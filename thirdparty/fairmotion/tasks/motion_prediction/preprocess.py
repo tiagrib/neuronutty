@@ -32,13 +32,13 @@ def split_into_windows(motion, window_size, stride):
     return motion_ws
 
 
-def process_file(ftuple, file_type, create_windows, convert_fn, lengths, transitional=False):
+def process_file(ftuple, file_type, create_windows, convert_fn, lengths, interpolative=False):
     src_len, tgt_len = lengths
     filepath, file_id = ftuple
     motion = amass_dip.load(filepath, file_type)
     motion.name = file_id
 
-    if create_windows is None and transitional:
+    if create_windows is None and interpolative:
         create_windows = (src_len*10, src_len*10)
 
     if create_windows is not None:
@@ -54,7 +54,7 @@ def process_file(ftuple, file_type, create_windows, convert_fn, lengths, transit
     else:
         matrices = [convert_fn(motion.rotations()).reshape((motion.num_frames(), -1))]
     
-    if transitional:
+    if interpolative:
         src_mtx = []
         tgt_mtx = []
         out_len = tgt_len
@@ -89,7 +89,7 @@ def process_file(ftuple, file_type, create_windows, convert_fn, lengths, transit
 
 
 def process_split(
-    all_fnames, output_path, rep, file_type, src_len, tgt_len, create_windows=None, transitional=False, num_cpus=40
+    all_fnames, output_path, rep, file_type, src_len, tgt_len, create_windows=None, interpolative=False, num_cpus=40
 ):
     """
     Process data into numpy arrays.
@@ -116,7 +116,7 @@ def process_split(
                 create_windows,
                 convert_fn,
                 (src_len, tgt_len),
-                transitional,
+                interpolative,
             )
             src_seqs.extend(data[0])
             tgt_seqs.extend(data[1])
@@ -129,7 +129,7 @@ def process_split(
             create_windows=create_windows,
             convert_fn=convert_fn,
             lengths=(src_len, tgt_len),
-            transitional=transitional,
+            interpolative=interpolative,
         )
         
         for worker_data in data:
@@ -179,8 +179,8 @@ def preprocess(args):
             pass
 
     output_path = os.path.join(args.output_dir, args.representation)
-    if args.transitional:
-        output_path = output_path + "_transitional"
+    if args.interpolative:
+        output_path = output_path + "_interpolative"
     fairmotion_utils.create_dir_if_absent(output_path)
 
     logging.info("Processing training data...")
@@ -192,7 +192,7 @@ def preprocess(args):
         src_len=args.src_len,
         tgt_len=args.tgt_len,
         create_windows=(args.window_size, args.window_stride),
-        transitional=args.transitional,
+        interpolative=args.interpolative,
         num_cpus=args.num_cpus
     )
 
@@ -205,7 +205,7 @@ def preprocess(args):
         src_len=args.src_len,
         tgt_len=args.tgt_len,
         create_windows=(args.window_size, args.window_stride),
-        transitional=args.transitional,
+        interpolative=args.interpolative,
         num_cpus=args.num_cpus
     )
 
@@ -218,7 +218,7 @@ def preprocess(args):
         src_len=args.src_len,
         tgt_len=args.tgt_len,
         create_windows=(args.window_size, args.window_stride),
-        transitional=args.transitional,
+        interpolative=args.interpolative,
         num_cpus=args.num_cpus
     )
 
@@ -279,9 +279,9 @@ if __name__ == "__main__":
         default="pkl",
     )
     parser.add_argument(
-        "--transitional", 
+        "--interpolative", 
         action='store_true', 
-        help="Use this option to train a transitional model instead of a predictive one",
+        help="Use this option to train a interpolative model instead of a predictive one",
     )
 
     args = parser.parse_args()

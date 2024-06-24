@@ -40,14 +40,14 @@ RowLayout {
             anchors.fill: parent
             source: "folder_list.qml"
             onLoaded: {
-                item.setFolderFilenamesFilter("$$^((?!tran_).)*\.model$")
-                item.setConfigFilter("!{\"transitional\": \"true\"}")
+                item.setFolderFilenamesFilter(".model")
+                item.setConfigFilter("!{\"interpolative\": \"true\"}")
+                item.refresh()
             }
         }
     }
 
     Component.onCompleted: {
         var folderTreeModel = getFolderTreeModel();
-        console.log("filter: " + folderTreeModel.filter);
     }
 }

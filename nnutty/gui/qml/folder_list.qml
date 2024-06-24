@@ -9,6 +9,7 @@ GroupBox {
     title: "Folder Selection"
     Material.theme: Material.Dark
     
+    property bool trigger_next_index_change: false
     property int selected_controller: 0
     property alias folderTreeModel: listView.model
 
@@ -18,6 +19,10 @@ GroupBox {
 
     function setConfigFilter(filterString) {
         folderModel.config_filter = filterString;
+    }
+
+    function refresh() {
+        nnutty.set_selected_folder(folderModel.folder + "/" + listView.model.getItemData(listView.currentIndex), selected_controller)
     }
 
     ColumnLayout {
@@ -97,7 +102,13 @@ GroupBox {
                     }
                 }
 
-                onCurrentIndexChanged: nnutty.set_selected_folder(folderModel.folder + "/" + model.getItemData(listView.currentIndex), selected_controller)
+                onCurrentIndexChanged: {
+                    if (trigger_next_index_change) {
+                        refresh()
+                    } else {
+                        trigger_next_index_change = true
+                    }
+                }
             }
         }
 
@@ -106,7 +117,7 @@ GroupBox {
 
             Button {
                 text: "Refresh"
-                onClicked: nnutty.set_selected_folder(folderModel.folder + "/" + listView.model.getItemData(listView.currentIndex), selected_controller)
+                onClicked: refresh()
             }
         }
         

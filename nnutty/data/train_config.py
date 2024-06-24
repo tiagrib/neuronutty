@@ -17,7 +17,7 @@ class TrainConfig:
     lr: float = None
     optimizer: str = 'sgd'
     representation: str = 'aa'
-    transitional: bool = False
+    interpolative: bool = False
 
     REQUIRED_FIELDS = ['preprocessed_path', 'save_model_path']
 

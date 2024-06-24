@@ -40,18 +40,21 @@ class FolderTreeModel(QtGui.QStandardItemModel):
         return self._config_filter
     
     def set_config_filter(self, config_filter):
-        try:
-            # Assuming config_filter is a JSON string from QML
-            if config_filter.startswith('!'):
-                self._negate_config_filter = True
-                config_filter = config_filter[1:]
-            else:
-                self._negate_config_filter = False
-            self._config_filter = json.loads(config_filter)
-            self.scanDirectory()
-            self.configFilterChanged.emit()
-        except json.JSONDecodeError:
-            print("Invalid JSON for config_filter")
+        if config_filter:
+            try:
+                # Assuming config_filter is a JSON string from QML
+                if config_filter.startswith('!'):
+                    self._negate_config_filter = True
+                    config_filter = config_filter[1:]
+                else:
+                    self._negate_config_filter = False
+                self._config_filter = json.loads(config_filter)
+                self.scanDirectory()
+                self.configFilterChanged.emit()
+            except json.JSONDecodeError:
+                print("Invalid JSON for config_filter")
+        else:
+            self._config_filter = None
 
     @QtCore.Slot(int, result=str)
     def getItemData(self, index):

@@ -33,7 +33,7 @@ def make_parser():
     # Common arguments for train and preprocess
     for subparser in [train, preprocess]:
         subparser.add_argument(
-            "--transitional", action='store_true', help="Use this option to train a transitional model instead of a predictive one",
+            "--interpolative", action='store_true', help="Use this option to train a interpolative model instead of a predictive one",
         )
 
     # Common arguments for train and test

@@ -112,6 +112,7 @@ class FairmotionModelController(UncachedAnimController):
         self.model_std = amass_mean_std.AMASS_FULL_STD
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.model_cache = {}
+        self.model = None
         self.model_file_cache = {}
         self.plot_data_cache = {}
         self.current_model_path = None
@@ -204,7 +205,8 @@ class FairmotionModelController(UncachedAnimController):
         self.fps = self.anim_file_ctrl.fps
         self.total_frames = self.anim_file_ctrl.motion.num_frames()
         self.preprocess_motion()
-        self.recompute_prediction()
+        if self.model:
+            self.recompute_prediction()
 
     def preprocess_motion(self):
         if self.current_model_path in self.model_file_cache and self.anim_file_ctrl.filename in self.model_file_cache[self.current_model_path]:

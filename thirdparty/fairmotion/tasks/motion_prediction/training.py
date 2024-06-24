@@ -43,8 +43,8 @@ def train(args):
     dataset_name = Path(args.preprocessed_path).stem
     
     
-    if args.transitional:
-        dataset_path = str(Path(args.preprocessed_path) / (args.representation + "_transitional"))
+    if args.interpolative:
+        dataset_path = str(Path(args.preprocessed_path) / (args.representation + "_interpolative"))
         model_name = f"{dataset_name}_{args.representation}_tran_{args.architecture}_{args.hidden_dim}hd_{args.num_layers}l"
     else:
         dataset_path = str(Path(args.preprocessed_path) / args.representation)

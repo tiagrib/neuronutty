@@ -63,7 +63,7 @@
                         "--hidden-dim", "1024",
                         "--lr", "0.001",
                         "--representation", "aa",
-                        //"--transitional"
+                        //"--interpolative"
                     ]        
         },
         {
@@ -78,7 +78,7 @@
                         "--output-dir", "C:/repo/shared/preprocessed/AMASS_ACCAD", 
                         "--representation", "aa",
                         "--split-dir", "C:/repo/shared/mocap/AMASS/Synthetic_60FPS_fnames",
-                        //"--transitional",
+                        //"--interpolative",
                         "--src-len", "5",
                         "--tgt-len", "5",
                         "--num-cpus", "1",
@@ -101,7 +101,7 @@
                         "--batch-size", "1",
                         "--representation", "aa",
                         "--save-output-path", "z:/generated",
-                        //"--transitional"
+                        //"--interpolative"
                     ]        
         }
     ]
