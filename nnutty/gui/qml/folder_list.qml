@@ -58,7 +58,8 @@ GroupBox {
                 model: FolderTreeModel {
                     id: folderModel
                     folder: pathField.text
-                    filter: ""
+                    filter: "$$^((?!tran_).)*\.model$"
+                    config_filter: "!{\"transitional\": \"true\"}"
                 }
 
                 delegate: Item {

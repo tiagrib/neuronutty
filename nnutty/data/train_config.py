@@ -33,6 +33,15 @@ class TrainConfig:
 
     def _get_kwargs(self):
         return [(field.name, getattr(self, field.name)) for field in fields(self)]
+    
+    def __iter__(self):
+        return iter(self._get_kwargs())
+    
+    def keys(self):
+        return [field.name for field in fields(self)]
+    
+    def __getitem__(self, item):
+        return getattr(self, item)
 
     @classmethod
     def from_file(cls, file_path):
