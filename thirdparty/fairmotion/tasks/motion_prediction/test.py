@@ -113,6 +113,7 @@ def test_model(model, dataset, rep, device, mean, std, max_len=None):
     pred_seqs, src_seqs, tgt_seqs = run_model(
         model, dataset, max_len, device, mean, std,
     )
+
     seqs_T = convert_to_T(pred_seqs, src_seqs, tgt_seqs, rep)
     # Calculate metric only when generated sequence has same shape as reference
     # target sequence
@@ -147,9 +148,8 @@ def main(args):
     )
 
     logging.info("Running model")
-    _, rep = os.path.split(dataset_path.strip("/"))
     seqs_T, mae = test_model(
-        model, dataset["validation"], rep, device, mean, std, args.max_len
+        model, dataset["train"], args.representation, device, mean, std, args.max_len
     )
     logging.info(
         "Test MAE: "

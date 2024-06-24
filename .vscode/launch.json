@@ -53,17 +53,17 @@
             "justMyCode": false,
             "args": [   "train",
                         "--save-model-path", "z:/models",
-                        "--preprocessed-path", "C:/repo/shared/preprocessed/AMASS_Transition",
+                        "--preprocessed-path", "C:/repo/shared/preprocessed/AMASS_ACCAD",
                         "--epochs", "100", 
                         "--device", "cuda", 
                         "--save-model-frequency", "5", 
                         "--architecture", "seq2seq",
-                        "--batch-size", "4096",
+                        "--batch-size", "1",
                         "--num-heads", "4",
                         "--hidden-dim", "1024",
                         "--lr", "0.001",
                         "--representation", "aa",
-                        "--transitional"
+                        //"--transitional"
                     ]        
         },
         {
@@ -74,16 +74,34 @@
             "console": "integratedTerminal",
             "justMyCode": false,
             "args": [   "preprocess",
-                        "--input-dir", "C:/repo/shared/mocap/AMASS/Synthetic_60FPS/AMASS_Transition", 
-                        "--output-dir", "C:/repo/shared/preprocessed/AMASS_Transition", 
-                        "--rep", "aa",
+                        "--input-dir", "C:/repo/shared/mocap/AMASS/Synthetic_60FPS/AMASS_ACCAD", 
+                        "--output-dir", "C:/repo/shared/preprocessed/AMASS_ACCAD", 
+                        "--representation", "aa",
                         "--split-dir", "C:/repo/shared/mocap/AMASS/Synthetic_60FPS_fnames",
-                        "--transitional",
+                        //"--transitional",
                         "--src-len", "5",
                         "--tgt-len", "5",
                         "--num-cpus", "1",
                         "--window-size", "30",
                         "--window-stride", "30",
+                    ]        
+        },
+        {
+            "name": "Test",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/__main__.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": [   "test",
+                        "--save-model-path", "z:/models/AMASS_ACCAD_aa_seq2seq_1024hd_1l",
+                        "--preprocessed-path", "C:/repo/shared/preprocessed/AMASS_ACCAD",
+                        "--device", "cuda", 
+                        "--architecture", "seq2seq",
+                        "--batch-size", "1",
+                        "--representation", "aa",
+                        "--save-output-path", "z:/generated",
+                        //"--transitional"
                     ]        
         }
     ]

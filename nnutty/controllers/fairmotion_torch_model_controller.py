@@ -202,6 +202,7 @@ class FairmotionModelController(UncachedAnimController):
         self.anim_file_ctrl.load_anim_file(filename)
         self.reference_anim_length = self.anim_file_ctrl.end_time
         self.fps = self.anim_file_ctrl.fps
+        self.total_frames = self.anim_file_ctrl.motion.num_frames()
         self.preprocess_motion()
         self.recompute_prediction()
 
@@ -210,27 +211,40 @@ class FairmotionModelController(UncachedAnimController):
             # if it's already cached then it's already preprocessed
             return
         logging.info("Preprocessing motion...")
-        self.preprocessed_motion = self.anim_file_ctrl.motion.rotations()
+        self.preprocessed_motion = self.rotations_to_normalized_motion_data(self.anim_file_ctrl.motion.rotations())
+
+    def rotations_to_normalized_motion_data(self, rotations):
         if self.representation == "aa":
-            self.preprocessed_motion = conversions.R2A(self.preprocessed_motion[:,:,:])
+            res = conversions.R2A(rotations)
         self.num_dim = 1
-        for x in self.preprocessed_motion.shape[1:]:
+        for x in res.shape[1:]:
             self.num_dim *= x
-        self.preprocessed_motion = self.preprocessed_motion.reshape(1, -1, self.num_dim)
-        self.preprocessed_motion[0] = (self.preprocessed_motion[0]-self.model_mean) / (self.model_std + np.finfo(float).eps)
-        self.preprocessed_motion = torch.Tensor(self.preprocessed_motion).to(device=self.device)
+        res = res.reshape(1, -1, self.num_dim)
+        res[0] = (res[0]-self.model_mean) / (self.model_std + np.finfo(float).eps)
+        res = torch.Tensor(res).to(device=self.device)
         if not FORCE_DATA_TO_FLOAT32:
-            self.preprocessed_motion = self.preprocessed_motion.double()
+            res = res.double()
+        return res
+
+    def normalized_motion_data_to_rotations(self, output):
+        output = utils.unnormalize(np.array(output), self.model_mean, self.model_std)
+        output = utils.unflatten_angles(output, self.representation)
+        if self.representation == "aa":
+            output = conversions.A2R(output)
+        output = np.array(output)
+        output = conversions.R2T(output)
+        return output
 
     def recompute_prediction(self):
         if self.anim_file_ctrl.motion is None:
             return
         
-        self.num_predictions = int(self.prediction_ratio * self.anim_file_ctrl.motion.num_frames())
+        self.num_predictions = int(self.prediction_ratio * self.total_frames)
+        self.num_predictions = self.total_frames - 120
         if "transformer" in type(self.model).__name__.lower():
-            self.num_predictions = self.anim_file_ctrl.motion.num_frames() - 120
+            self.num_predictions = self.total_frames - 120
         self.reference_anim_length = self.anim_file_ctrl.end_time - self.num_predictions/self.anim_file_ctrl.fps
-        self.num_ref_frames = self.anim_file_ctrl.motion.num_frames() - self.num_predictions
+        self.num_ref_frames = self.total_frames - self.num_predictions
 
         if self.current_model_path in self.model_file_cache and self.anim_file_ctrl.filename in self.model_file_cache[self.current_model_path]:
             cached_predictions = self.model_file_cache[self.current_model_path][self.anim_file_ctrl.filename]
@@ -254,19 +268,14 @@ class FairmotionModelController(UncachedAnimController):
             .to(device="cpu")
             .numpy()
         )
-        
-        
-        pred_seq = utils.unnormalize(np.array(pred_seq), self.model_mean, self.model_std)
-        pred_seq = utils.unflatten_angles(pred_seq, self.representation)
-        if self.representation == "aa":
-            pred_seq = conversions.A2R(pred_seq)
-        pred_seq = np.array(pred_seq)
-        pred_seq = conversions.R2T(pred_seq)
+
+        computed_motion = self.preprocessed_motion.numpy(force=True)
+        computed_motion[:,self.num_ref_frames:] = pred_seq
+        computed_motion = self.normalized_motion_data_to_rotations(computed_motion)
+
         self.computed_poses = []
-        for i in range(self.num_ref_frames):
-            self.computed_poses.append(self.anim_file_ctrl.motion.get_pose_by_frame(i))
-        for i in range(self.num_predictions):
-            self.computed_poses.append(Pose(self.anim_file_ctrl.motion.skel, pred_seq[0][i]))
+        for i in range(self.total_frames):
+            self.computed_poses.append(Pose(self.anim_file_ctrl.motion.skel, computed_motion[0][i]))
         if self.parent:
             self.parent.reset()
         else:

@@ -178,7 +178,7 @@ def preprocess(args):
         else:
             pass
 
-    output_path = os.path.join(args.output_dir, args.rep)
+    output_path = os.path.join(args.output_dir, args.representation)
     if args.transitional:
         output_path = output_path + "_transitional"
     fairmotion_utils.create_dir_if_absent(output_path)
