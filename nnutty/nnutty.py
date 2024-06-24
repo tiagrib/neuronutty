@@ -9,6 +9,7 @@ from PySide6 import QtCore
 
 
 from nnutty.controllers.character_controller import CharacterSettings
+from nnutty.controllers.fairmotion_interpolative_model import FairmotionInterpolativeController
 from nnutty.controllers.fairmotion_torch_model_controller import FairmotionMultiController
 from nnutty.controllers.wave_controller import WaveAnimController
 from nnutty.gui.nnutty_win import NNuttyWin
@@ -146,6 +147,12 @@ class NNutty(QtCore.QObject):
         logging.info("add_fairmotion_model_character()")
         self.add_character(Character(body_model=BodyModel("stick_figure2"),
                                      controller=FairmotionMultiController(self, settings=CharacterSettings(args=self.args))))
+        
+    @QtCore.Slot()
+    def add_fairmotion_interp_model_character(self):
+        logging.info("add_fairmotion_interp_model_character()")
+        self.add_character(Character(body_model=BodyModel("stick_figure2"),
+                                     controller=FairmotionInterpolativeController(self, settings=CharacterSettings(args=self.args))))
 
     @QtCore.Slot()
     def add_dip_character(self):

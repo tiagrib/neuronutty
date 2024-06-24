@@ -41,6 +41,8 @@ ApplicationWindow {
         switch (nnutty.get_selected_character_controller_name()) {
             case "FairmotionMultiController":
                 return "char_ctrl_fairmotion_model.qml";
+            case "FairmotionInterpolativeController":
+                return "char_ctrl_fairmotion_interp_model.qml";
             case "AnimFileController":
             case "DualAnimFileController":
                 return "char_ctrl_anim_file.qml";
@@ -86,6 +88,11 @@ ApplicationWindow {
                     Button {
                         text: "Fairmotion Model Character"
                         onClicked: nnutty.add_fairmotion_model_character()
+                    }
+
+                    Button {
+                        text: "Fairmotion Interpolative Model Character"
+                        onClicked: nnutty.add_fairmotion_interp_model_character()
                     }
                     Button {
                         text: "DIP Model Character"
@@ -174,6 +181,8 @@ ApplicationWindow {
                     animFilePanelLoader.source = "dual_anim_file_panel.qml"
                 } else if (nnutty.get_selected_character_controller_name() === "FairmotionMultiController") {
                     animFilePanelLoader.source = "char_ctrl_fairmotion_top_panel.qml"
+                } else if (nnutty.get_selected_character_controller_name() === "FairmotionInterpolativeController") {
+                    animFilePanelLoader.source = "char_ctrl_fairmotion_interp_top_panel.qml"
                 } else if (nnutty.get_selected_character_controller_name() === "AnimFileController") {
                     animFilePanelLoader.source = "anim_file_panel.qml"
                 }
