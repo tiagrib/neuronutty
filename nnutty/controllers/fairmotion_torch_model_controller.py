@@ -46,7 +46,8 @@ class FairmotionMultiController(MultiAnimController):
         
     def load_model(self, model_path:str):
         for ctrl in self.model_ctrls:
-            ctrl.load_model(model_path)
+            ctrl.load_model(model_path, recompute=True)
+        self.reset()
 
     def load_anim_file(self, filename:str, controller_index:int=0, update_plots:bool=False):
         self.model_ctrls[0].load_anim_file(filename)
@@ -54,7 +55,7 @@ class FairmotionMultiController(MultiAnimController):
             self.model_ctrls[i].anim_file_ctrl = self.model_ctrls[0].anim_file_ctrl
         self.reset()
         self.nnutty.plot1Updated.emit()
-        self.nnutty.plot2Updated.emit()
+        #self.nnutty.plot2Updated.emit()
 
     def set_prediction_ratio(self, ratio):
         for ctrl in self.model_ctrls:
@@ -101,7 +102,7 @@ class FairmotionModelController(UncachedAnimController):
                  settings:CharacterSettings = None, 
                  animctrl = None,
                  parent=None,
-                 recompute=True):
+                 recompute=False):
         super().__init__(nnutty, ctrl_type=CharCtrlType.MODEL, settings=settings, parent=parent)
         self.orig_anim_length = 0.0
         self.in_prediction = False
@@ -147,7 +148,7 @@ class FairmotionModelController(UncachedAnimController):
         else:
             return None
 
-    def load_model(self, model_path:str, recompute:bool=True):        
+    def load_model(self, model_path:str, recompute:bool=False):        
         model_path = Path(model_path)
         if model_path.is_dir():
             model_folder = model_path
@@ -159,8 +160,9 @@ class FairmotionModelController(UncachedAnimController):
             self.model = self.model_cache[model_path]
             self.current_model_path = model_path
             logging.info(f"Model loaded into '{self.device}'.")
-            self.preprocess_motion()
-            self.recompute_prediction()
+            if recompute:
+                self.preprocess_motion()
+                self.recompute_prediction()
             return
         
         config = TrainConfig.from_file(model_folder / "config.txt")
@@ -198,8 +200,6 @@ class FairmotionModelController(UncachedAnimController):
         self.model.load_state_dict(torch.load(model_path, map_location=self.device))
         self.model.eval()
         self.model_cache[model_path] = self.model
-        self.model_file_cache[model_path] = {}
-        self.plot_data_cache[model_path] = {}
         self.current_model_path = model_path
         logging.info(f"Model loaded into '{self.device}'.")
 
@@ -214,8 +214,7 @@ class FairmotionModelController(UncachedAnimController):
         self.fps = self.anim_file_ctrl.fps
         self.total_frames = self.anim_file_ctrl.motion.num_frames()
         self.preprocess_motion()
-        if self.model:
-            self.recompute_prediction()
+        self.recompute_prediction()
 
     def preprocess_motion(self):
         if self._get_cached(self.num_predictions):
@@ -249,7 +248,7 @@ class FairmotionModelController(UncachedAnimController):
         return output
 
     def recompute_prediction(self):
-        if self.anim_file_ctrl.motion is None:
+        if self.model is None or self.anim_file_ctrl.motion is None:
             return
         
         self.num_predictions = int(self.prediction_ratio * self.total_frames)
@@ -260,8 +259,8 @@ class FairmotionModelController(UncachedAnimController):
         self.num_ref_frames = self.total_frames - self.num_predictions
 
         cached_predictions = self._get_cached(self.num_predictions)
-        if cached_predictions and self.num_predictions in cached_predictions:
-            self.computed_poses = cached_predictions[self.num_predictions]
+        if cached_predictions is not None:
+            self.computed_poses = cached_predictions
             self.nnutty.plot2Updated.emit()
             logging.info(f"Prediction loaded from cache..")
             return
@@ -295,27 +294,36 @@ class FairmotionModelController(UncachedAnimController):
         self._cache_computed_poses(self.num_predictions)
         self.nnutty.plot2Updated.emit()
 
-    def _get_cached(self, model=None, filename=None, end_index=None):
+    def _get_cached(self, end_index=None, model=None, filename=None):
         if model is None:
             model = self.current_model_path
         if filename is None:
             filename = self.anim_file_ctrl.filename
         if model in self.model_file_cache and filename in self.model_file_cache[model]:
             cache = self.model_file_cache[model][filename]
-            if end_index and end_index in cache:
-                return cache[end_index]
+            if end_index is not None: 
+                if end_index in cache:
+                    return cache[end_index]
+                else:
+                    return None
             else:
                 return cache
         return None
 
     def _cache_computed_poses(self, end_index=None):
+        self._add_cache(self.computed_poses, end_index)
+
+    def _add_cache(self, data, end_index=None):
+        if self.current_model_path not in self.model_file_cache:
+            self.model_file_cache[self.current_model_path] = {}
+            self.plot_data_cache[self.current_model_path] = {}
         if self.anim_file_ctrl.filename not in self.model_file_cache[self.current_model_path]:
             self.model_file_cache[self.current_model_path][self.anim_file_ctrl.filename] = {}
             self.plot_data_cache[self.current_model_path][self.anim_file_ctrl.filename] = {}
         if end_index is None:
-            self.model_file_cache[self.current_model_path][self.anim_file_ctrl.filename] = self.computed_poses
+            self.model_file_cache[self.current_model_path][self.anim_file_ctrl.filename] = data
         else:
-            self.model_file_cache[self.current_model_path][self.anim_file_ctrl.filename][end_index] = self.computed_poses
+            self.model_file_cache[self.current_model_path][self.anim_file_ctrl.filename][end_index] = data
 
     def set_prediction_ratio(self, ratio):
         if ratio != self.prediction_ratio:

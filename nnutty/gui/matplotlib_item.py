@@ -90,6 +90,7 @@ class MatplotlibItem(QtQuick.QQuickPaintedItem):
 
     @QtCore.Slot(QtCore.QObject, int, int, int)
     def update_figure(self, source, index=0, target_width=None, target_height=None):
+        return
         if target_width is not None:
             self.setDisplayWidth(target_width)
         if target_height is not None:

@@ -42,7 +42,7 @@ GroupBox {
             Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                Layout.preferredWidth: parent.width * 0.35
+                Layout.preferredWidth: parent.width * 0.3
 
                 ColumnLayout {
                     id: colPlot1
@@ -68,14 +68,14 @@ GroupBox {
                 id: secondaryAnimFileListLoader
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                Layout.preferredWidth: parent.width * 0.3
+                Layout.preferredWidth: parent.width * 0.4
                 source: "anim_file_list_2.qml"
             }
 
             Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                Layout.preferredWidth: parent.width * 0.35
+                Layout.preferredWidth: parent.width * 0.3
 
                 ColumnLayout {
                     id: colPlot2

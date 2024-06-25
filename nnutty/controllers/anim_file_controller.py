@@ -42,6 +42,9 @@ class AnimFileController(CachedAnimController):
         if filename in self.caches:
             self.motion = self.caches[filename]
             self.filename = filename
+            self.end_time = self.motion.length()
+            self.fps = self.motion.fps
+            self.reset()
         else:        
             motion = None
             if filename:

@@ -8,10 +8,10 @@ import QtCore
 
 ApplicationWindow {
     id: main
-    width: 1200
+    width: 1400
     height: 900
     visible: true
-    minimumWidth: 600
+    minimumWidth: 800
     minimumHeight: 800
     title: qsTr("NeuroNutty")
     Material.theme: Material.Dark
