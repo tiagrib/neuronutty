@@ -90,9 +90,9 @@ class NNutty(QtCore.QObject):
 
         self.mutex_characters = Lock()
         self.characters = []
-        self.selected_animation = None
         self.selected_folder = None
-        self._skip_reload_animation = False
+        self.selected_animation = [None, None] # support primary and secondary animations only
+        self._skip_reload_animation = [False, False] # support primary and secondary animations only
         self._skip_selected_folder_reload = False
 
     def add_character(self, character:Character):
@@ -102,9 +102,11 @@ class NNutty(QtCore.QObject):
         if self.selected_folder is not None and self.get_first_controller().loads_folders():
             self.set_selected_folder(self.selected_folder)
             self._skip_selected_folder_reload = True
-        if self.selected_animation is not None and self.get_first_controller().loads_animations():
-            self.set_selected_animation_file(self.selected_animation.parent, self.selected_animation.name, update_plots=True)
-            self._skip_reload_animation = True
+        controller_animations = self.get_first_controller().loads_animations()
+        for i, anim in enumerate(self.selected_animation):
+            if anim is not None and controller_animations > i:
+                self.set_selected_animation_file(anim.parent, anim.name, update_plots=True, controller_idx=i)
+                self._skip_reload_animation[i] = True
         self.charactersModified.emit()
 
     def selected_character_invalid(self, controller_type=None):
@@ -209,14 +211,13 @@ class NNutty(QtCore.QObject):
     
     @QtCore.Slot(str, str, int)
     def set_selected_animation_file(self, folder, filename, controller_idx=0, update_plots=False):
-        if self._skip_reload_animation:
-            self._skip_reload_animation = False
+        if self._skip_reload_animation[controller_idx]:
+            self._skip_reload_animation[controller_idx] = False
             return
-        if controller_idx == 0:
-            if folder is None or filename is None: 
-                self.selected_animation = None
-            else:
-                self.selected_animation = Path(folder) / filename
+        if folder is None or filename is None: 
+            self.selected_animation[controller_idx] = None
+        else:
+            self.selected_animation[controller_idx] = Path(folder) / filename
         if (self.selected_character_invalid() or 
             not self.get_first_controller().loads_animations()): return
         self.get_first_controller().load_anim_file(Path(folder) / filename, 

@@ -16,7 +16,7 @@ class CachedAnimController(CharacterController):
         self.motion = None
 
     def loads_animations(self):
-        return True
+        return 1
 
     def digest_fairmotion(self, motion):
         self.digest_motion(motion)

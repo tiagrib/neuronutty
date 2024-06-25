@@ -18,7 +18,7 @@ class DualAnimFileController(MultiAnimController):
                          parent=parent)
         
     def loads_animations(self):
-        return True
+        return 2
 
     def load_anim_file(self, filename:str, controller_index:int=0, update_plots:bool=False):
         assert(controller_index < len(self.ctrls))

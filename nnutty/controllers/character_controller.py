@@ -95,7 +95,7 @@ class CharacterController():
             self.settings = settings
 
     def loads_animations(self):
-        return False
+        return 0
     
     def loads_folders(self):
         return False

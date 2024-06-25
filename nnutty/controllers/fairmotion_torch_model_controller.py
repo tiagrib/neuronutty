@@ -39,7 +39,7 @@ class FairmotionMultiController(MultiAnimController):
         self.model_ctrls = [self.ctrls[1]]
         
     def loads_animations(self):
-        return True
+        return 1
     
     def loads_folders(self):
         return True
@@ -294,16 +294,16 @@ class FairmotionModelController(UncachedAnimController):
         self._cache_computed_poses(self.num_predictions)
         self.nnutty.plot2Updated.emit()
 
-    def _get_cached(self, end_index=None, model=None, filename=None):
-        if model is None:
-            model = self.current_model_path
-        if filename is None:
-            filename = self.anim_file_ctrl.filename
-        if model in self.model_file_cache and filename in self.model_file_cache[model]:
-            cache = self.model_file_cache[model][filename]
-            if end_index is not None: 
-                if end_index in cache:
-                    return cache[end_index]
+    def _get_cached(self, end_key=None, key1=None, key2=None):
+        if key1 is None:
+            key1 = self.current_model_path
+        if key2 is None:
+            key2 = self.anim_file_ctrl.filename
+        if key1 in self.model_file_cache and key2 in self.model_file_cache[key1]:
+            cache = self.model_file_cache[key1][key2]
+            if end_key is not None: 
+                if end_key in cache:
+                    return cache[end_key]
                 else:
                     return None
             else:
@@ -313,17 +313,21 @@ class FairmotionModelController(UncachedAnimController):
     def _cache_computed_poses(self, end_index=None):
         self._add_cache(self.computed_poses, end_index)
 
-    def _add_cache(self, data, end_index=None):
-        if self.current_model_path not in self.model_file_cache:
-            self.model_file_cache[self.current_model_path] = {}
-            self.plot_data_cache[self.current_model_path] = {}
-        if self.anim_file_ctrl.filename not in self.model_file_cache[self.current_model_path]:
-            self.model_file_cache[self.current_model_path][self.anim_file_ctrl.filename] = {}
-            self.plot_data_cache[self.current_model_path][self.anim_file_ctrl.filename] = {}
-        if end_index is None:
-            self.model_file_cache[self.current_model_path][self.anim_file_ctrl.filename] = data
+    def _add_cache(self, data, end_key=None, key1=None, key2=None):
+        if key1 is None:
+            key1 = self.current_model_path
+        if key2 is None:
+            key2 = self.anim_file_ctrl.filename
+        if key1 not in self.model_file_cache:
+            self.model_file_cache[key1] = {}
+            self.plot_data_cache[key1] = {}
+        if key2 not in self.model_file_cache[key1]:
+            self.model_file_cache[key1][key2] = {}
+            self.plot_data_cache[key1][key2] = {}
+        if end_key is None:
+            self.model_file_cache[key1][key2] = data
         else:
-            self.model_file_cache[self.current_model_path][self.anim_file_ctrl.filename][end_index] = data
+            self.model_file_cache[key1][key2][end_key] = data
 
     def set_prediction_ratio(self, ratio):
         if ratio != self.prediction_ratio:
