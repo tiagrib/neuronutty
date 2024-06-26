@@ -12,6 +12,7 @@ import torch.nn as nn
 import sys
 import time
 
+from nnutty.data.train_config import TrainConfig
 from nnutty.tasks.model_mean_std import ModelMeanStd
 from nnutty.util import pretty_time_delta
 
@@ -41,10 +42,14 @@ def train(args):
     logging.info(str(args))
     fairmotion_utils.create_dir_if_absent(args.save_model_path)
     dataset_name = Path(args.preprocessed_path).stem
-    model_name = f"{dataset_name}_{args.representation}_{args.architecture}_{args.hidden_dim}hd_{args.num_layers}l"
+    dataset_path = TrainConfig.get_preprocessed_path(args)
+    
+    if args.interpolative:
+        model_name = f"{dataset_name}_{args.representation}_tran_{args.architecture}_{args.hidden_dim}hd_{args.num_layers}l"
+    else:
+        model_name = f"{dataset_name}_{args.representation}_{args.architecture}_{args.hidden_dim}hd_{args.num_layers}l"
     if "transformer" in args.architecture:
         model_name += f"_{args.num_heads}heads"
-    dataset_path = str(Path(args.preprocessed_path) / args.representation)
     dest_model_path = str(Path(args.save_model_path) / model_name)
     
     fairmotion_utils.create_dir_if_absent(dest_model_path)
@@ -59,7 +64,7 @@ def train(args):
     logging.info("Preparing dataset...")
     dataset, mean, std = utils.prepare_dataset(
         *[
-            os.path.join(dataset_path, f"{split}.pkl")
+            str(dataset_path / f"{split}.pkl")
             for split in ["train", "test", "validation"]
         ],
         batch_size=args.batch_size,
@@ -76,13 +81,15 @@ def train(args):
     # number of predictions per time step = num_joints * angle representation
     # shape is (batch_size, seq_len, num_predictions)
     _, tgt_len, num_predictions = next(iter(dataset["train"]))[1].shape
+    input_dim = num_predictions
 
     model = utils.prepare_model(
-        input_dim=num_predictions,
+        input_dim=input_dim,
         hidden_dim=args.hidden_dim,
         device=device,
         num_layers=args.num_layers,
         architecture=args.architecture,
+        output_dim=num_predictions
     )
 
     criterion = nn.MSELoss()
@@ -156,11 +163,10 @@ def train(args):
         epoch_time = int((time.perf_counter() - start_time) / (epoch + 1))
         logging.info(f"Average epoch time: {pretty_time_delta(epoch_time)}. {pretty_time_delta((args.epochs - (epoch + 1)) * epoch_time)} estimated left.")
         if epoch % args.save_model_frequency == 0:
-            _, rep = os.path.split(dataset_path.strip("/"))
             _, mae = test.test_model(
                 model=model,
                 dataset=dataset["validation"],
-                rep=rep,
+                rep=args.representation,
                 device=device,
                 mean=mean,
                 std=std,

@@ -24,6 +24,18 @@ def make_parser():
     compute_means = subparsers.add_parser('means', help='Compute mean and std for each model.')
     datasetinfo = subparsers.add_parser('dataset_info', help='Show info about datasets')
 
+    # Common arguments for all parsers
+    for subparser in [train, preprocess, test, train_daemon, compute_means, datasetinfo]:
+        subparser.add_argument(
+            "--num-cpus", type=int, help="Number of parallell tasks to spawn", default=40,
+        )
+
+    # Common arguments for train and preprocess
+    for subparser in [train, preprocess]:
+        subparser.add_argument(
+            "--interpolative", action='store_true', help="Use this option to train a interpolative model instead of a predictive one",
+        )
+
     # Common arguments for train and test
     for subparser in [train, test]:
         subparser.add_argument(
@@ -83,7 +95,7 @@ def make_parser():
         "--split-dir", default="./data", help="Where the text files defining the data splits are stored.",
     )
     preprocess.add_argument(
-        "--rep", type=str, help="Angle representation to convert data to", choices=["aa", "quat", "rotmat"], default="aa",
+        "--representation", type=str, help="Angle representation to convert data to", choices=["aa", "quat", "rotmat"], default="aa",
     )
     preprocess.add_argument(
         "--src-len", type=int, default=120, help="Number of frames fed as input motion to the model",
@@ -147,8 +159,8 @@ if __name__ == "__main__":
         from fairmotion.tasks.motion_prediction import preprocess
         preprocess.preprocess(args)
     elif args.command == 'test':
-        from fairmotion.tasks.motion_prediction import testing
-        testing.test(args)
+        from fairmotion.tasks.motion_prediction import test
+        test.main(args)
     elif args.command == 'means':
         from nnutty.tasks.model_mean_std import ModelMeanStd
         means = ModelMeanStd(args.models_path)

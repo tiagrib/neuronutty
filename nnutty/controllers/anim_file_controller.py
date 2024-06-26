@@ -16,10 +16,9 @@ class DualAnimFileController(MultiAnimController):
                                 AnimFileController(nnutty, settings=CharacterSettings.copy(settings), parent=self)],
                          settings=settings,
                          parent=parent)
-        self.ctrl_type = CharCtrlType.DUAL_ANIM_FILE
         
     def loads_animations(self):
-        return True
+        return 2
 
     def load_anim_file(self, filename:str, controller_index:int=0, update_plots:bool=False):
         assert(controller_index < len(self.ctrls))
@@ -43,6 +42,9 @@ class AnimFileController(CachedAnimController):
         if filename in self.caches:
             self.motion = self.caches[filename]
             self.filename = filename
+            self.end_time = self.motion.length()
+            self.fps = self.motion.fps
+            self.reset()
         else:        
             motion = None
             if filename:

@@ -30,7 +30,7 @@ class TrainDaemon:
             (not mine_only or
              (self.mine_only and (
                  (file_path.name.split('.')[0] == platform.node().lower())))) and
-             ((not running_only and not file_path.suffix == ".done") or
+             ((not running_only and file_path.suffix == ".txt") or
               (running_only and file_path.suffix == ".running"))):
               return True
         return False

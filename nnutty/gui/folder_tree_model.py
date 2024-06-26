@@ -1,16 +1,23 @@
 import os
 import fnmatch
 from pathlib import Path
+import re
+import json
 from PySide6 import QtCore, QtGui
+
+from nnutty.data.train_config import TrainConfig
 
 class FolderTreeModel(QtGui.QStandardItemModel):
     folderChanged = QtCore.Signal()
     filterChanged = QtCore.Signal()
+    configFilterChanged = QtCore.Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self._folder = ''
         self._filter = ''
+        self._config_filter = None
+        self._negate_config_filter = False
         self.items = []
 
     def get_folder(self):
@@ -29,6 +36,26 @@ class FolderTreeModel(QtGui.QStandardItemModel):
         self.scanDirectory()
         self.folderChanged.emit()
 
+    def get_config_filter(self):
+        return self._config_filter
+    
+    def set_config_filter(self, config_filter):
+        if config_filter:
+            try:
+                # Assuming config_filter is a JSON string from QML
+                if config_filter.startswith('!'):
+                    self._negate_config_filter = True
+                    config_filter = config_filter[1:]
+                else:
+                    self._negate_config_filter = False
+                self._config_filter = json.loads(config_filter)
+                self.scanDirectory()
+                self.configFilterChanged.emit()
+            except json.JSONDecodeError:
+                print("Invalid JSON for config_filter")
+        else:
+            self._config_filter = None
+
     @QtCore.Slot(int, result=str)
     def getItemData(self, index):
         item = self.item(index)
@@ -38,6 +65,23 @@ class FolderTreeModel(QtGui.QStandardItemModel):
 
     folder = QtCore.Property(str, get_folder, set_folder, notify=folderChanged)
     filter = QtCore.Property(str, get_filter, set_filter, notify=filterChanged)
+    config_filter = QtCore.Property(str, get_config_filter, set_config_filter, notify=configFilterChanged)
+
+    def check_is_valid_config_filter(self, path):
+        if not self._config_filter:
+            return True
+        config = TrainConfig.from_file(path / 'config.txt')
+        config_keys = config.keys()
+        for key, check_value in self._config_filter.items():
+            if key not in config_keys:
+                return self._negate_config_filter
+            config_value = str(config[key]).lower()
+            if config_value == 'none':
+                return self._negate_config_filter
+            if ((not self._negate_config_filter and config_value == check_value.lower()) or
+                (self._negate_config_filter and config_value != check_value.lower())):
+                return True
+        return False
 
     def scanDirectory(self):
         self.clear()
@@ -53,15 +97,18 @@ class FolderTreeModel(QtGui.QStandardItemModel):
                 if self._filter.strip() == "":
                     valid_directory = True
                 else:
-                    for _, _, files in os.walk(Path(self._folder) / dir ):
-                        for extension in self._filter.split(','):
-                            for file in fnmatch.filter(files, extension):
-                                found_valid_files = True
+                    for file in (Path(self._folder) / dir).iterdir():
+                        if self._filter.startswith('$$'):
+                            # regex filter
+                            rex = self._filter[2:]
+                            reobj = re.compile(rex)
+                            if reobj.match(file.name) and self.check_is_valid_config_filter(file.parent):
+                                valid_directory = True
                                 break
-                            if found_valid_files:
+                        else:
+                            if file.suffix in self._filter and self.check_is_valid_config_filter(file.parent):
+                                valid_directory = True
                                 break
-                        if found_valid_files:
-                            break
                 if valid_directory:
                     self.items.append(dir)
                     item = QtGui.QStandardItem(dir)

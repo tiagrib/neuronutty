@@ -10,11 +10,10 @@ DEFAULT_SCALE = 1.0
 class CharCtrlType(Enum):
     UNKNOWN = 0
     ANIM_FILE = 1
-    DUAL_ANIM_FILE = 2
-    MODEL = 3
-    WAVE = 4
-    DIP = 5
-    MULTI = 6
+    MODEL = 2
+    WAVE = 3
+    DIP = 4
+    MULTI = 5
 
     def __str__(self):
         return self.name
@@ -31,10 +30,6 @@ class CharCtrlTypeWrapper(QtCore.QObject):
     def ANIM_FILE(self):
         return CharCtrlType.ANIM_FILE.value
     
-    @QtCore.Property(int, constant=True)
-    def DUAL_ANIM_FILE(self):
-        return CharCtrlType.DUAL_ANIM_FILE.value
-
     @QtCore.Property(int, constant=True)
     def MODEL(self):
         return CharCtrlType.MODEL.value
@@ -100,7 +95,7 @@ class CharacterController():
             self.settings = settings
 
     def loads_animations(self):
-        return False
+        return 0
     
     def loads_folders(self):
         return False

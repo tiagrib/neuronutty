@@ -41,7 +41,7 @@ RowLayout {
             source: "folder_list.qml"
             onLoaded: {
                 item.setFolderFilenamesFilter(".model")
-                item.setConfigFilter("!{\"interpolative\": \"true\"}")
+                item.setConfigFilter("{\"interpolative\": \"true\"}")
                 item.refresh()
             }
         }

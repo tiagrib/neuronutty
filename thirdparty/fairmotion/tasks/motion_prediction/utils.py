@@ -120,9 +120,12 @@ def prepare_model(
     num_layers=1, 
     ninp=128, 
     num_heads=4,
-    src_length=120
+    src_length=120,
+    output_dim=None
 ):
     architecture = architecture.lower()
+    if output_dim is None:
+        output_dim = input_dim
     if architecture == "rnn":
         model = rnn.RNN(input_dim, hidden_dim, num_layers)
     if architecture == "seq2seq":
@@ -132,7 +135,7 @@ def prepare_model(
         dec = decoders.LSTMDecoder(
             input_dim=input_dim,
             hidden_dim=hidden_dim,
-            output_dim=input_dim,
+            output_dim=output_dim,
             device=device,
         ).to(device)
         model = seq2seq.Seq2Seq(enc, dec)

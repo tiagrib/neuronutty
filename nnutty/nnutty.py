@@ -9,6 +9,7 @@ from PySide6 import QtCore
 
 
 from nnutty.controllers.character_controller import CharacterSettings
+from nnutty.controllers.fairmotion_interpolative_model import FairmotionInterpolativeController
 from nnutty.controllers.fairmotion_torch_model_controller import FairmotionMultiController
 from nnutty.controllers.wave_controller import WaveAnimController
 from nnutty.gui.nnutty_win import NNuttyWin
@@ -89,9 +90,9 @@ class NNutty(QtCore.QObject):
 
         self.mutex_characters = Lock()
         self.characters = []
-        self.selected_animation = None
         self.selected_folder = None
-        self._skip_reload_animation = False
+        self.selected_animation = [None, None] # support primary and secondary animations only
+        self._skip_reload_animation = [False, False] # support primary and secondary animations only
         self._skip_selected_folder_reload = False
 
     def add_character(self, character:Character):
@@ -101,9 +102,11 @@ class NNutty(QtCore.QObject):
         if self.selected_folder is not None and self.get_first_controller().loads_folders():
             self.set_selected_folder(self.selected_folder)
             self._skip_selected_folder_reload = True
-        if self.selected_animation is not None and self.get_first_controller().loads_animations():
-            self.set_selected_animation_file(self.selected_animation.parent, self.selected_animation.name, update_plots=True)
-            self._skip_reload_animation = True
+        controller_animations = self.get_first_controller().loads_animations()
+        for i, anim in enumerate(self.selected_animation):
+            if anim is not None and controller_animations > i:
+                self.set_selected_animation_file(anim.parent, anim.name, update_plots=True, controller_idx=i)
+                self._skip_reload_animation[i] = True
         self.charactersModified.emit()
 
     def selected_character_invalid(self, controller_type=None):
@@ -146,6 +149,12 @@ class NNutty(QtCore.QObject):
         logging.info("add_fairmotion_model_character()")
         self.add_character(Character(body_model=BodyModel("stick_figure2"),
                                      controller=FairmotionMultiController(self, settings=CharacterSettings(args=self.args))))
+        
+    @QtCore.Slot()
+    def add_fairmotion_interp_model_character(self):
+        logging.info("add_fairmotion_interp_model_character()")
+        self.add_character(Character(body_model=BodyModel("stick_figure2"),
+                                     controller=FairmotionInterpolativeController(self, settings=CharacterSettings(args=self.args))))
 
     @QtCore.Slot()
     def add_dip_character(self):
@@ -202,18 +211,18 @@ class NNutty(QtCore.QObject):
     
     @QtCore.Slot(str, str, int)
     def set_selected_animation_file(self, folder, filename, controller_idx=0, update_plots=False):
-        if self._skip_reload_animation:
-            self._skip_reload_animation = False
+        if self._skip_reload_animation[controller_idx]:
+            self._skip_reload_animation[controller_idx] = False
             return
         if folder is None or filename is None: 
-            self.selected_animation = None
+            self.selected_animation[controller_idx] = None
         else:
-            self.selected_animation = Path(folder) / filename
+            self.selected_animation[controller_idx] = Path(folder) / filename
         if (self.selected_character_invalid() or 
             not self.get_first_controller().loads_animations()): return
-        self.get_first_controller().load_anim_file(self.selected_animation, 
-                                                             controller_index=controller_idx, 
-                                                             update_plots=update_plots)
+        self.get_first_controller().load_anim_file(Path(folder) / filename, 
+                                                    controller_index=controller_idx, 
+                                                    update_plots=update_plots)
 
     @QtCore.Slot(str, int)
     def set_selected_folder(self, folder, controller_idx=0):
@@ -286,6 +295,11 @@ class NNutty(QtCore.QObject):
     def wavectrl_reset_joints(self):
         if (self.selected_character_invalid(WaveAnimController)): return
         self.get_first_controller().clear_skeleton()
+
+    @QtCore.Slot()
+    def trigger_secondary_animation(self):
+        if (self.selected_character_invalid(FairmotionInterpolativeController)): return
+        self.get_first_controller().trigger_secondary()
     
     def get_plot_data(self, index=0):
         if self.selected_character_invalid(): return
