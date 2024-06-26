@@ -229,10 +229,8 @@ class FairmotionModelController(UncachedAnimController):
         self.num_dim = 1
         for x in res.shape[1:]:
             self.num_dim *= x
-        if self.interpolative:
-            self.num_dim *= 2
         res = res.reshape(1, -1, self.num_dim)
-        res[0] = (res[0]-self.model_mean) / (self.model_std + np.finfo(float).eps)
+        res[0] = (res[0]-self.model_mean[:self.num_dim]) / (self.model_std[:self.num_dim] + np.finfo(float).eps)
         res = torch.Tensor(res).to(device=self.device)
         if not FORCE_DATA_TO_FLOAT32:
             res = res.double()

@@ -53,9 +53,9 @@ class ModelMeanStd:
         logging.info(f"Computing mean for {model_path}")
         config = TrainConfig.from_file(model_path / "config.txt")
         logging.info(config)
-
-        train_data = os.path.join(Path(config.preprocessed_path) / config.representation, f"train.pkl")
-        dataset = Dataset(train_data, config.device)
+        dataset_path = config.get_preprocessed_path()
+        train_data = dataset_path / f"train.pkl"
+        dataset = Dataset(str(train_data), "cpu")
         mean, std = dataset.mean, dataset.std
         self.data = {
             "model_name": model_path.stem,

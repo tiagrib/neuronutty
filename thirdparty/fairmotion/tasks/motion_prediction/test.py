@@ -14,6 +14,7 @@ from fairmotion.core import motion as motion_class
 from fairmotion.tasks.motion_prediction import generate, metrics, utils
 from fairmotion.ops import conversions, motion as motion_ops
 from fairmotion.utils import utils as fairmotion_utils
+from nnutty.data.train_config import TrainConfig
 
 
 logging.basicConfig(
@@ -125,7 +126,7 @@ def test_model(model, dataset, rep, device, mean, std, max_len=None):
 def main(args):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     logging.info("Preparing dataset")
-    dataset_path = Path(args.preprocessed_path) / args.representation
+    dataset_path = TrainConfig.get_preprocessed_path(args)
     dataset, mean, std = utils.prepare_dataset(
         *[
             os.path.join(dataset_path, f"{split}.pkl")

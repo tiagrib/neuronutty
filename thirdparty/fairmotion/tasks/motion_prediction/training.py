@@ -12,6 +12,7 @@ import torch.nn as nn
 import sys
 import time
 
+from nnutty.data.train_config import TrainConfig
 from nnutty.tasks.model_mean_std import ModelMeanStd
 from nnutty.util import pretty_time_delta
 
@@ -41,13 +42,11 @@ def train(args):
     logging.info(str(args))
     fairmotion_utils.create_dir_if_absent(args.save_model_path)
     dataset_name = Path(args.preprocessed_path).stem
-    
+    dataset_path = TrainConfig.get_preprocessed_path(args)
     
     if args.interpolative:
-        dataset_path = str(Path(args.preprocessed_path) / (args.representation + "_interpolative"))
         model_name = f"{dataset_name}_{args.representation}_tran_{args.architecture}_{args.hidden_dim}hd_{args.num_layers}l"
     else:
-        dataset_path = str(Path(args.preprocessed_path) / args.representation)
         model_name = f"{dataset_name}_{args.representation}_{args.architecture}_{args.hidden_dim}hd_{args.num_layers}l"
     if "transformer" in args.architecture:
         model_name += f"_{args.num_heads}heads"
@@ -65,7 +64,7 @@ def train(args):
     logging.info("Preparing dataset...")
     dataset, mean, std = utils.prepare_dataset(
         *[
-            os.path.join(dataset_path, f"{split}.pkl")
+            str(dataset_path / f"{split}.pkl")
             for split in ["train", "test", "validation"]
         ],
         batch_size=args.batch_size,

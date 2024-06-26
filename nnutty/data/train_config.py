@@ -42,6 +42,11 @@ class TrainConfig:
     
     def __getitem__(self, item):
         return getattr(self, item)
+    
+    def get_preprocessed_path(self):
+        if hasattr(self, 'interpolative') and self.interpolative:
+            return Path(self.preprocessed_path) / (self.representation + '_interpolative')
+        return Path(self.preprocessed_path) / self.representation
 
     @classmethod
     def from_file(cls, file_path):
