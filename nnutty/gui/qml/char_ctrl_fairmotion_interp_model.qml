@@ -46,7 +46,7 @@ GroupBox {
                     Layout.preferredWidth: parent.width * 0.3
 
                     Label {
-                        text: "Reference"
+                        text: "Base motion"
                         Layout.fillWidth: true
                     }
                 
@@ -59,7 +59,7 @@ GroupBox {
                     }
 
                     Label {
-                        text: "Generated"
+                        text: "Target motion"
                         Layout.fillWidth: true
                     }
 
