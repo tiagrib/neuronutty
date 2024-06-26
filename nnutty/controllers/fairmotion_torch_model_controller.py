@@ -184,13 +184,10 @@ class FairmotionModelController(UncachedAnimController):
         else:
             # aa, 3 x 24 joints
             self.num_dim = 72
-        
-        if self.interpolative:
-            self.num_dim *= 2
 
         logging.info(f"Preparing model '{model_path}'...")
         self.model = utils.prepare_model(
-            input_dim=self.num_dim,
+            input_dim=self.num_dim * (2 if self.interpolative else 1),
             hidden_dim=config.hidden_dim,
             device=self.device,
             num_layers=config.num_layers,
@@ -226,9 +223,6 @@ class FairmotionModelController(UncachedAnimController):
     def rotations_to_normalized_motion_data(self, rotations):
         if self.representation == "aa":
             res = conversions.R2A(rotations)
-        self.num_dim = 1
-        for x in res.shape[1:]:
-            self.num_dim *= x
         res = res.reshape(1, -1, self.num_dim)
         res[0] = (res[0]-self.model_mean[:self.num_dim]) / (self.model_std[:self.num_dim] + np.finfo(float).eps)
         res = torch.Tensor(res).to(device=self.device)
@@ -237,7 +231,7 @@ class FairmotionModelController(UncachedAnimController):
         return res
 
     def normalized_motion_data_to_rotations(self, output):
-        output = utils.unnormalize(np.array(output), self.model_mean, self.model_std)
+        output = utils.unnormalize(np.array(output), self.model_mean[:self.num_dim], self.model_std[:self.num_dim])
         output = utils.unflatten_angles(output, self.representation)
         if self.representation == "aa":
             output = conversions.A2R(output)

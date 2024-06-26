@@ -4,8 +4,11 @@ import numpy as np
 from nnutty.controllers.anim_file_controller import AnimFileController
 from nnutty.controllers.character_controller import CharacterSettings
 from nnutty.controllers.fairmotion_torch_model_controller import FairmotionModelController, FairmotionMultiController
+import torch
 from fairmotion.ops import conversions
 from fairmotion.core.motion import Pose
+from fairmotion.tasks.motion_prediction import generate
+from fairmotion.ops import math as motion_math
 
 BASE_MOTION_CACHE = 10
 SECONDARY_MOTION_CACHE = 20
@@ -129,10 +132,17 @@ class FairmotionInterpolativeModelController(FairmotionModelController):
         self.computed_poses.extend(self.anim_file_ctrl2.motion.poses[self.transition_to_frame:])
         self.total_frames = len(self.computed_poses)
         self.total_time = self.total_frames / self.anim_file_ctrl.fps
+        dims = self.preprocessed_motion.shape
+        interpolation_buffer = torch.zeros(dims[0], self.total_frames, dims[2], dtype=self.preprocessed_motion.dtype)
+        interpolation_buffer[:,:self.transition_frame] = self.preprocessed_motion[:,:self.transition_frame]
+        interpolation_buffer[:,self.transition_frame:] = self.preprocessed_secondary_motion[:,self.transition_to_frame:]
+        self.interpolation_buffer = interpolation_buffer
+        self.interpolation_buffer_untouched = self.interpolation_buffer.clone()
         self.interpolating = True
         print("Triggered transition from frame ", self.transition_frame)
         self.src_start = self.transition_frame - self.src_len
         self.tgt_start = self.transition_frame + 1
+        self.transition_fade_frames = 15
 
     def advance_time(self, dt, params=None):
         if self.computed_poses:
@@ -140,15 +150,21 @@ class FairmotionInterpolativeModelController(FairmotionModelController):
                 curr_frame = int(self.cur_time * self.anim_file_ctrl.fps + 1e-05)
                 self.cur_time += dt
                 interpolating = self.transition_frame is not None
+                if interpolating != self.interpolating:
+                    if not interpolating:
+                        print("Performing base animation.")
+                    else:
+                        print("Performing generated motion.")
+                    self.interpolating = interpolating
                 if self.cur_time > self.total_time:
                     self.cur_time = 0.0
                     curr_frame = 0
-                    if interpolating:
-                        print("Triggered transition from frame ", self.transition_frame)
+                    if self.interpolating:
                         self.src_start = self.transition_frame - self.src_len
                         self.tgt_start = self.transition_frame + 1
+                        self.interpolation_buffer = self.interpolation_buffer_untouched.clone()
 
-                if not interpolating or curr_frame < self.transition_frame:
+                if not self.interpolating or curr_frame < self.transition_frame:
                     # copy from base
                     self.settings.color = np.array([85, 160, 173, 255]) / 255.0  # blue
                     self.pose = self.computed_poses[curr_frame]
@@ -156,11 +172,24 @@ class FairmotionInterpolativeModelController(FairmotionModelController):
                     # interpolate
                     self.settings.color = np.array([173, 130, 50, 255]) / 255.0  # orange-red
                     self.pose = self.computed_poses[curr_frame]
-                    print(f"Interpolating [{self.src_start}:{self.src_start + self.src_len}] -> [{self.tgt_start}:{self.tgt_start + self.tgt_len}]")
+                    src_motion = self.interpolation_buffer[:,self.src_start : self.src_start + self.src_len + self.tgt_len]
+                    src_motion = src_motion.reshape(1, int(src_motion.shape[1]/2), src_motion.shape[2]*2)
+                    gen_seq = generate.generate(self.model, src_motion, 1, self.device)[:,:,:self.num_dim]
+
+                    fade_frame = self.src_start + self.src_len - self.transition_frame + 1
+                    available_transition_frames = min(self.transition_fade_frames, self.preprocessed_motion.shape[1] - self.src_start + self.src_len)
+                    if fade_frame < available_transition_frames:
+                        fade = fade_frame / available_transition_frames
+                        src_frame = self.preprocessed_motion[0][self.src_start+self.src_len]
+                        gen_seq = motion_math.lerp(src_frame, gen_seq, fade)
+
+                    self.interpolation_buffer[0][self.src_start + self.src_len] = gen_seq
+                    gen_seq = gen_seq.to(device="cpu").numpy()
+                    gen_seq = self.normalized_motion_data_to_rotations(gen_seq).squeeze()
+
+                    
+                    self.pose = Pose(self.anim_file_ctrl.motion.skel, gen_seq)
                     self.src_start += 1
-                    self.tgt_start += 1
-                    if self.tgt_start >= self.total_frames - self.tgt_len:
-                        self.tgt_start = self.total_frames - self.tgt_len
                     
             except Exception as e:
                 print(f"Error computing pose: {e}")
