@@ -54,8 +54,7 @@ class FairmotionMultiController(MultiAnimController):
         for i in range(1, len(self.model_ctrls)):
             self.model_ctrls[i].anim_file_ctrl = self.model_ctrls[0].anim_file_ctrl
         self.reset()
-        self.nnutty.plot1Updated.emit()
-        #self.nnutty.plot2Updated.emit()
+        self.nnutty.plotUpdated.emit(0)
 
     def set_prediction_ratio(self, ratio):
         for ctrl in self.model_ctrls:
@@ -104,6 +103,7 @@ class FairmotionModelController(UncachedAnimController):
                  parent=None,
                  recompute=False):
         super().__init__(nnutty, ctrl_type=CharCtrlType.MODEL, settings=settings, parent=parent)
+        self.supports_interpolative_models = False
         self.orig_anim_length = 0.0
         self.in_prediction = False
         self.computed_poses = []
@@ -167,6 +167,12 @@ class FairmotionModelController(UncachedAnimController):
         
         config = TrainConfig.from_file(model_folder / "config.txt")
         logging.info(f"Model config: {config}")
+        if config.interpolative and not self.supports_interpolative_models:
+            print("Interpolative model is not supported by this Controller.")
+            return
+        if not config.interpolative and self.supports_interpolative_models:
+            print("This Controller only supports interpolative models.")
+            return
 
         mean_std = ModelMeanStd(model_folder)
         mean_std.load()
@@ -206,6 +212,9 @@ class FairmotionModelController(UncachedAnimController):
             self.recompute_prediction()
 
     def load_anim_file(self, filename:str, controller_index=0):
+        if self.model is None:
+            print("Model not loaded")
+            return
         self.anim_file_ctrl.load_anim_file(filename)
         self.reference_anim_length = self.anim_file_ctrl.end_time
         self.fps = self.anim_file_ctrl.fps
@@ -221,6 +230,7 @@ class FairmotionModelController(UncachedAnimController):
         self.preprocessed_motion = self.rotations_to_normalized_motion_data(self.anim_file_ctrl.motion.rotations())
 
     def rotations_to_normalized_motion_data(self, rotations):
+        res = rotations
         if self.representation == "aa":
             res = conversions.R2A(rotations)
         res = res.reshape(1, -1, self.num_dim)
@@ -244,16 +254,13 @@ class FairmotionModelController(UncachedAnimController):
             return
         
         self.num_predictions = int(self.prediction_ratio * self.total_frames)
-        self.num_predictions = self.total_frames - 120
-        if "transformer" in type(self.model).__name__.lower():
-            self.num_predictions = self.total_frames - 120
         self.reference_anim_length = self.anim_file_ctrl.end_time - self.num_predictions/self.anim_file_ctrl.fps
         self.num_ref_frames = self.total_frames - self.num_predictions
 
         cached_predictions = self._get_cached(self.num_predictions)
         if cached_predictions is not None:
             self.computed_poses = cached_predictions
-            self.nnutty.plot2Updated.emit()
+            self.nnutty.plotUpdated.emit(1)
             logging.info(f"Prediction loaded from cache..")
             return
         
@@ -284,7 +291,7 @@ class FairmotionModelController(UncachedAnimController):
         else:
             self.reset()
         self._cache_computed_poses(self.num_predictions)
-        self.nnutty.plot2Updated.emit()
+        self.nnutty.plotUpdated.emit(1)
 
     def _get_cached(self, end_key=None, key1=None, key2=None):
         if key1 is None:

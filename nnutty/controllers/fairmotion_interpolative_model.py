@@ -72,6 +72,7 @@ class FairmotionInterpolativeModelController(FairmotionModelController):
         self.anim_file_ctrl2 = animctrl2
         self.queue_secondary_loading = False
         super().__init__(nnutty, model_path=model_path, settings=settings, animctrl=animctrl, parent=parent)
+        self.supports_interpolative_models = True
         self.total_time = 0.0
         self.transition_frame = None
         self.preprocessed_secondary_motion = None
@@ -83,6 +84,9 @@ class FairmotionInterpolativeModelController(FairmotionModelController):
         self.tgt_start = 0
     
     def preprocess_secondary(self):
+        if self.model is None:
+            print("Model not loaded")
+            return
         if self.anim_file_ctrl2.motion is None:
             return
         if self.anim_file_ctrl2.fps != self.anim_file_ctrl.fps:
@@ -105,6 +109,9 @@ class FairmotionInterpolativeModelController(FairmotionModelController):
             self._add_cache(self.preprocessed_secondary_motion, SECONDARY_MOTION_CACHE, key2=self.anim_file_ctrl2.filename)
             
     def preprocess_base(self):
+        if self.model is None:
+            print("Model not loaded")
+            return
         if self.anim_file_ctrl.motion is None:
             return
         

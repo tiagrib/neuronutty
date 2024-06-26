@@ -14,93 +14,100 @@ GroupBox {
         return parent.getFolderTreeModel()
     }
 
-    ColumnLayout {
-        id: colLayout
+    RowLayout {
         spacing: 10
         anchors.fill: parent
 
-        RowLayout {
-            Button {
-                text: "Restart Playback"
-                onClicked: nnutty.reset_playback()
+        ColumnLayout {
+            id: col1
+            spacing: 0
+            Layout.fillHeight: true
+            Layout.preferredWidth: parent.width * 0.5
+
+            RowLayout {
+                Button {
+                    text: "Restart Playback"
+                    onClicked: nnutty.reset_playback()
+                }
+                Button {
+                    text: "Trigger Transition"
+                    onClicked: nnutty.trigger_secondary_animation()
+                }
             }
-            Button {
-                text: "Trigger Transition"
-                onClicked: nnutty.trigger_secondary_animation()
+
+            Label {
+                text: "Base motion"
+                Layout.fillWidth: true
+            }
+        
+            MatplotlibItem {
+                id: matplotlibItem1
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                display_width: 500
+                display_height: 200
+            }
+
+            Label {
+                text: "Target motion"
+                Layout.fillWidth: true
+            }
+
+            MatplotlibItem {
+                id: matplotlibItem2
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                display_width: 500
+                display_height: 200
             }
         }
 
-        RowLayout {
-            id: rowFIM
+        ColumnLayout {
+            id: col2
             spacing: 0
-            Layout.fillWidth: true
             Layout.fillHeight: true
-
-        
-
-                ColumnLayout {
-                    id: colPlot1
-                    spacing: 0
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    Layout.preferredWidth: parent.width * 0.3
-
-                    Label {
-                        text: "Base motion"
-                        Layout.fillWidth: true
-                    }
-                
-                    MatplotlibItem {
-                        id: matplotlibItem1
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        display_width: 500
-                        display_height: 250
-                    }
-
-                    Label {
-                        text: "Target motion"
-                        Layout.fillWidth: true
-                    }
-
-                    MatplotlibItem {
-                        id: matplotlibItem2
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        display_width: 500
-                        display_height: 250
-                    }
-
-                    onHeightChanged: {
-                        console.log("colPlot1 height changed to:", height);
-                    }
-                }
+            Layout.preferredWidth: parent.width * 0.5
 
             Loader {
                 id: secondaryAnimFileListLoader
+                Layout.fillHeight: true
+                Layout.fillWidth: true
+                source: "anim_file_list_2.qml"
+            }
+
+            Label {
+                text: "Generated motion"
+                Layout.fillWidth: true
+            }
+        
+            MatplotlibItem {
+                id: matplotlibItem3
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                Layout.preferredWidth: parent.width * 0.4
-                source: "anim_file_list_2.qml"
+                display_width: 500
+                display_height: 200
             }
         }
 
         Connections {
             target: nnutty
-            function onPlot1Updated() {
-                console.log("Update plot1")
-                console.log(colPlot1.height)
-                matplotlibItem1.update_figure(nnutty, 0, colPlot1.width, colPlot1.height*0.45)
-            }
-            function onPlot2Updated() {
-                console.log("Update plot2")
-                matplotlibItem2.update_figure(nnutty, 1, colPlot1.width, colPlot1.height*0.45)
+            function onPlotUpdated(index) {
+                console.log("Update plot", index)
+                if (index == 0) {
+                    matplotlibItem1.update_figure(nnutty, 0, col1.width, col1.height*0.45)
+                } else if (index == 1) {
+                    matplotlibItem2.update_figure(nnutty, 1, col1.width, col1.height*0.45)
+                } else if (index == 2) {
+                    matplotlibItem3.update_figure(nnutty, 2, col1.width, col1.height*0.45)
+                }
             }
         }
     }
     
     Component.onCompleted: {
-        matplotlibItem1.update_figure(nnutty, 0, matplotlibItem1.display_width, matplotlibItem1.display_height)
-        matplotlibItem2.update_figure(nnutty, 1, matplotlibItem2.display_width, matplotlibItem2.display_height)
+        Qt.callLater(function() {
+            matplotlibItem1.update_figure(nnutty, 0, col1.width, col1.height*0.45)
+            matplotlibItem2.update_figure(nnutty, 1, col1.width, col1.height*0.45)
+        })
     }
 }

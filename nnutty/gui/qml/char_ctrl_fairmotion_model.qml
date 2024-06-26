@@ -113,13 +113,13 @@ GroupBox {
 
         Connections {
             target: nnutty
-            function onPlot1Updated() {
-                console.log("Update plot1")
-                matplotlibItem1.update_figure(nnutty, 0, colPlot1.width, colPlot1.height)
-            }
-            function onPlot2Updated() {
-                console.log("Update plot2")
-                matplotlibItem2.update_figure(nnutty, 1, colPlot2.width, colPlot2.height)
+            function onPlotUpdated(index) {
+                console.log("Update plot", index)
+                if (index == 0) {
+                    matplotlibItem1.update_figure(nnutty, 0, colPlot1.width, colPlot1.height)
+                } else if (index == 1) {
+                    matplotlibItem2.update_figure(nnutty, 1, colPlot1.width, colPlot1.height)
+                }
             }
         }
     }

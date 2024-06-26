@@ -65,11 +65,8 @@ class AnimFileController(CachedAnimController):
                 logging.info(f"Loaded animation file: '{filename}'")
                 self.caches[filename] = self.motion
                 self.filename = filename
-        if self.motion:
-            if update_plots or controller_index == 0:
-                self.nnutty.plot1Updated.emit()
-            if update_plots or controller_index == 1:
-                self.nnutty.plot2Updated.emit()
+        if self.motion and update_plots:
+            self.nnutty.plotUpdated.emit(controller_index)
 
     def get_plot_data(self, index=0):
         if self.filename in self.plot_data_cache:

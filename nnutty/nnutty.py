@@ -67,8 +67,7 @@ class Worker(QtCore.QRunnable):
 
 class NNutty(QtCore.QObject):
     charactersModified = QtCore.Signal()
-    plot1Updated = QtCore.Signal()
-    plot2Updated = QtCore.Signal()
+    plotUpdated = QtCore.Signal(int)
 
     def __init__(self, app):
         super().__init__()
@@ -238,7 +237,7 @@ class NNutty(QtCore.QObject):
     def set_fairmotion_model_prediction_ratio(self, ratio=0.9):
         if (self.selected_character_invalid(FairmotionMultiController)): return
         self.get_first_controller().set_prediction_ratio(ratio)
-        self.plot1Updated.emit()
+        self.plotUpdated.emit(0)
 
     @QtCore.Slot(result=float)
     def get_fairmotion_model_prediction_ratio(self):
