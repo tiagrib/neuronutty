@@ -55,7 +55,7 @@ class CachedAnimController(CharacterController):
     def get_cur_time(self):
         return self.cur_time
 
-    def get_plot_data(self, index=0):
+    def get_plot_data(self, index=0, no_cache=False):
         if self.motion is None:
             return None
         

@@ -9,6 +9,7 @@ from fairmotion.ops import conversions
 from fairmotion.core.motion import Pose
 from fairmotion.tasks.motion_prediction import generate
 from fairmotion.ops import math as motion_math
+from nnutty.util.plot_data import get_plot_data_from_poses
 
 BASE_MOTION_CACHE = 10
 SECONDARY_MOTION_CACHE = 20
@@ -38,11 +39,12 @@ class FairmotionInterpolativeController(FairmotionMultiController):
         
     def load_anim_file(self, filename:str, controller_index:int=0, update_plots:bool=False):
         if controller_index == 0:
-            self.animctrl1.load_anim_file(filename, controller_index=controller_index)
+            self.animctrl1.load_anim_file(filename, controller_index=controller_index, update_plots=True)
             self.fimctrl.preprocess_base()
             self.reset()
+            self.nnutty.plotUpdated.emit(2)
         else:
-            self.animctrl2.load_anim_file(filename, controller_index=controller_index)
+            self.animctrl2.load_anim_file(filename, controller_index=controller_index, update_plots=True)
             self.fimctrl.preprocess_secondary()
 
     def trigger_secondary(self):
@@ -58,8 +60,8 @@ class FairmotionInterpolativeController(FairmotionMultiController):
     def get_cur_time(self):
         return self.fimctrl.get_cur_time()
     
-    def get_plot_data(self, index):
-        return self.ctrls[[0,2][index]].get_plot_data()
+    def get_plot_data(self, index, no_cache=False):
+        return self.ctrls[[0, 2, 1][index]].get_plot_data(no_cache=index==2)
 
 class FairmotionInterpolativeModelController(FairmotionModelController):
     def __init__(self, nnutty,  model_path:str = None, 
@@ -82,6 +84,7 @@ class FairmotionInterpolativeModelController(FairmotionModelController):
         self.tgt_len = 5
         self.src_start = 0
         self.tgt_start = 0
+        self.generated_plot_needs_update = True
     
     def preprocess_secondary(self):
         if self.model is None:
@@ -127,9 +130,14 @@ class FairmotionInterpolativeModelController(FairmotionModelController):
         self.total_frames = len(self.computed_poses)
         self.total_time = self.total_frames / self.anim_file_ctrl.fps
         self.transition_frame = None
+        self.generated_plot_needs_update = True
         if self.queue_secondary_loading:
             self.preprocess_secondary()
             self.queue_secondary_loading = False
+
+    def load_model(self, model_path:str, recompute:bool=False):
+        self.generated_plot_needs_update = True
+        super().load_model(model_path, recompute)
 
     def trigger_transition(self):
         if self.preprocessed_secondary_motion is None:
@@ -149,10 +157,12 @@ class FairmotionInterpolativeModelController(FairmotionModelController):
         self.interpolation_buffer = interpolation_buffer
         self.interpolation_buffer_untouched = self.interpolation_buffer.clone()
         self.interpolating = True
+        self.generated_buffer_for_plot = None
         print("Triggered transition from frame ", self.transition_frame)
         self.src_start = self.transition_frame - self.src_len
         self.tgt_start = self.transition_frame + 1
         self.transition_fade_frames = 15
+        self.generated_plot_needs_update = True
 
     def advance_time(self, dt, params=None):
         if self.computed_poses:
@@ -172,6 +182,10 @@ class FairmotionInterpolativeModelController(FairmotionModelController):
                     if self.interpolating:
                         self.src_start = self.transition_frame - self.src_len
                         self.tgt_start = self.transition_frame + 1
+                        self.generated_buffer_for_plot = self.interpolation_buffer[0].clone()
+                        if self.generated_plot_needs_update:
+                            self.nnutty.plotUpdated.emit(2)
+                            self.generated_plot_needs_update = False
                         self.interpolation_buffer = self.interpolation_buffer_untouched.clone()
 
                 if not self.interpolating or curr_frame < self.transition_frame:
@@ -181,13 +195,12 @@ class FairmotionInterpolativeModelController(FairmotionModelController):
                 else:
                     # interpolate
                     self.settings.color = np.array([173, 130, 50, 255]) / 255.0  # orange-red
-                    self.pose = self.computed_poses[curr_frame]
                     src_motion = self.interpolation_buffer[:,self.src_start : self.src_start + self.src_len + self.tgt_len]
                     src_motion = src_motion.reshape(1, int(src_motion.shape[1]/2), src_motion.shape[2]*2)
                     gen_seq = generate.generate(self.model, src_motion, 1, self.device)[:,:,:self.num_dim]
 
                     fade_frame = self.src_start + self.src_len - self.transition_frame + 1
-                    available_transition_frames = min(self.transition_fade_frames, self.preprocessed_motion.shape[1] - self.src_start + self.src_len)
+                    available_transition_frames = min(self.transition_fade_frames, self.preprocessed_motion.shape[1] - (self.src_start + self.src_len))
                     if fade_frame < available_transition_frames:
                         fade = fade_frame / available_transition_frames
                         src_frame = self.preprocessed_motion[0][self.src_start+self.src_len]
@@ -203,3 +216,12 @@ class FairmotionInterpolativeModelController(FairmotionModelController):
                     
             except Exception as e:
                 print(f"Error computing pose: {e}")
+
+    def get_plot_data(self, no_cache=False):
+        res = self.computed_poses
+        if self.transition_frame is not None and self.generated_buffer_for_plot is not None:
+            rotations = self.normalized_motion_data_to_rotations(self.generated_buffer_for_plot)
+            res = []
+            for i in range(len(rotations)):
+                res.append(Pose(self.anim_file_ctrl.motion.skel, rotations[i]))
+        return get_plot_data_from_poses(self.anim_file_ctrl.motion.skel, res)

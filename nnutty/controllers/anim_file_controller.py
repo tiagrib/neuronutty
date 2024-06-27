@@ -68,8 +68,8 @@ class AnimFileController(CachedAnimController):
         if self.motion and update_plots:
             self.nnutty.plotUpdated.emit(controller_index)
 
-    def get_plot_data(self, index=0):
-        if self.filename in self.plot_data_cache:
+    def get_plot_data(self, index=0, no_cache=False):
+        if not no_cache and self.filename in self.plot_data_cache:
             res = self.plot_data_cache[self.filename]
         else:
             res = super().get_plot_data(index)

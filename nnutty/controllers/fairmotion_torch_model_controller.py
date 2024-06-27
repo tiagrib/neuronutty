@@ -64,8 +64,8 @@ class FairmotionMultiController(MultiAnimController):
     def get_prediction_ratio(self):
         return self.model_ctrls[0].get_prediction_ratio()
     
-    def get_plot_data(self, index):
-        return self.ctrls[index].get_plot_data()
+    def get_plot_data(self, index, no_cache=False):
+        return self.ctrls[index].get_plot_data(no_cache=no_cache)
     
     def display_all_models(self, state:bool, selected_item, all_items):
         if state:
@@ -131,11 +131,11 @@ class FairmotionModelController(UncachedAnimController):
         if model_path:
             self.load_model(model_path,recompute=recompute)
 
-    def get_plot_data(self):
+    def get_plot_data(self, no_cache=False):
         if self.anim_file_ctrl is None or self.anim_file_ctrl.motion is None:
             return None
         
-        if (self.current_model_path in self.plot_data_cache and 
+        if (not no_cache and self.current_model_path in self.plot_data_cache and 
                 self.anim_file_ctrl.filename in self.plot_data_cache[self.current_model_path] and 
                 self.num_predictions in self.plot_data_cache[self.current_model_path][self.anim_file_ctrl.filename]):
             return self.plot_data_cache[self.current_model_path][self.anim_file_ctrl.filename][self.num_predictions]

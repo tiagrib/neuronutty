@@ -100,7 +100,7 @@ class CharacterController():
     def loads_folders(self):
         return False
     
-    def get_plot_data(self, index=0):
+    def get_plot_data(self, index=0, no_cache=False):
         return None
 
     def reset(self):

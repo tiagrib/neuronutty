@@ -12,7 +12,7 @@ ApplicationWindow {
     height: 900
     visible: true
     minimumWidth: 800
-    minimumHeight: 800
+    minimumHeight: 900
     title: qsTr("NeuroNutty")
     Material.theme: Material.Dark
 
