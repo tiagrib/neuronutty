@@ -8,7 +8,7 @@ from thirdparty.fairmotion.tasks.motion_prediction.dataset import Dataset
 from fairmotion.tasks.motion_prediction import utils
 
 DATASET_FILES = ["train.pkl", "validation.pkl", "test.pkl"]
-DATASET_REPS = ["rotmat", "aa"]
+DATASET_REPS = ["rotmat", "aa", "aa_interpolative"]
 
 logging.basicConfig(
     format="[%(asctime)s] %(message)s",
