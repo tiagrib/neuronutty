@@ -1,5 +1,5 @@
 from nnutty.controllers.character_controller import CharCtrlType, CharacterController, CharacterSettings
-from fairmotion.core.motion import Motion
+from fairmotion.core.motion import Motion, Pose
 from fairmotion.ops import conversions
 from nnutty.util.plot_data import get_plot_data_from_poses
 
@@ -43,13 +43,17 @@ class CachedAnimController(CharacterController):
                     self.motion.clear()
                     
                 # shape is (num_frames, num_inputs = 3 * num_joints)
-                if motion.shape[-1] != 3 and motion.shape[-2] != 3:
-                    frames = motion.reshape(motion[0].shape[0], 24, 3)
-                    frames = conversions.A2T(frames)
+                if isinstance(motion, list) and len(motion) > 0 and isinstance(motion[0], Pose):
+                    for pose in motion:
+                        self.motion.add_one_frame(pose.data)
                 else:
-                    frames = conversions.R2T(motion)
-                for i in range(len(frames)):
-                    self.motion.add_one_frame(frames[i])
+                    if motion.shape[-1] != 3 and motion.shape[-2] != 3:
+                        frames = motion.reshape(motion[0].shape[0], 24, 3)
+                        frames = conversions.A2T(frames)
+                    else:
+                        frames = conversions.R2T(motion)
+                    for i in range(len(frames)):
+                        self.motion.add_one_frame(frames[i])
         self.end_time = self.motion.length()
         self.fps = self.motion.fps
         self.reset()

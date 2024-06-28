@@ -197,6 +197,17 @@ class NNutty(QtCore.QObject):
     def get_show_character_origin(self):
         if self.selected_character_invalid(): return False
         return self.get_first_controller().settings.show_origin
+    
+    @QtCore.Slot(bool)
+    def set_ground_character_feet(self, value):
+        if self.selected_character_invalid(): return
+        logging.info(f"set_ground_character_feet: {value}")
+        self.get_first_controller().settings.ground_feet = value
+
+    @QtCore.Slot(result=bool)
+    def get_ground_character_feet(self):
+        if self.selected_character_invalid(): return False
+        return self.get_first_controller().settings.ground_feet
 
     @QtCore.Slot(result=str)
     def get_selected_character_controller_name(self):

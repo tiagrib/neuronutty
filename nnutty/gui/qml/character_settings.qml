@@ -32,6 +32,12 @@ GroupBox {
             text: "Show origin"
             checked: nnutty.get_show_character_origin()
         }
+        Switch {
+            id: switchGroundFeet
+            onCheckedChanged: nnutty.set_ground_character_feet(checked)
+            text: "Ground feet"
+            checked: nnutty.get_ground_character_feet()
+        }
         Label { text: "World Position" }
         Row {
             Layout.fillWidth: true

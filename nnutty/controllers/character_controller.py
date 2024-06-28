@@ -1,5 +1,6 @@
 from enum import Enum
 from fairmotion.utils import utils
+from fairmotion.ops import conversions
 from PySide6 import QtCore
 import numpy as np
 
@@ -58,6 +59,7 @@ class CharacterSettings():
         self.scale = scale if scale else DEFAULT_SCALE
         self.world_offset = [0.0, 0.0, 0.0]
         self.show_origin = True
+        self.ground_feet = False
         self.color = np.array([85, 160, 173, 255]) / 255.0  # blue
 
     @classmethod
@@ -69,6 +71,7 @@ class CharacterSettings():
         new_settings.world_offset = existing.world_offset.copy()
         new_settings.show_origin = existing.show_origin
         new_settings.color = existing.color.copy()
+        new_settings.ground_feet = existing.ground_feet
         return new_settings
 
     def set_world_offset(self, offset):
@@ -79,6 +82,9 @@ class CharacterSettings():
 
     def set_scale(self, scale):
         self.scale = scale
+
+    def set_ground_feet(self, ground_feet):
+        self.ground_feet = ground_feet
 
 class CharacterController():
     def __init__(self, 
@@ -94,6 +100,7 @@ class CharacterController():
             self.settings = CharacterSettings()
         else:
             self.settings = settings
+        self.feet_pelvis_offset = None
 
     def loads_animations(self):
         return 0
@@ -125,3 +132,22 @@ class CharacterController():
     def is_ending(self, dt):
         return None
     
+    def get_ground_point(self, pose):
+        enabled = self.settings.ground_feet
+        parent = self.parent
+        while not enabled and parent:
+            enabled = parent.settings.ground_feet
+            parent = parent.parent
+
+        if not enabled:
+            return np.array([0.0, 0.0, 0.0])
+        
+        lfoot_pos = conversions.T2p(pose.get_transform('l_foot', local=False))
+        rfoot_pos = conversions.T2p(pose.get_transform('r_foot', local=False))
+        foot_diff = rfoot_pos - lfoot_pos
+
+        if foot_diff[1] < 0.01:
+            return (lfoot_pos + rfoot_pos) / 2.0
+        if lfoot_pos[1] < rfoot_pos[1]:
+            return lfoot_pos
+        return lfoot_pos

@@ -94,6 +94,9 @@ class FairmotionMultiController(MultiAnimController):
             self.model_ctrls[0].preprocess_motion()
             self.model_ctrls[0].recompute_prediction()
         self.reposition_subcontrollers()
+
+    def get_ground_point(self, pose):
+        return self.fmctrl.get_ground_point(pose)
     
 
 class FairmotionModelController(UncachedAnimController):

@@ -38,16 +38,17 @@ class FairmotionInterpolativeController(FairmotionMultiController):
                          )
         self.ctrls.append(self.animctrl2)
         self.ctrls.append(self.linctrl)
-        self.animctrl1.name = "Base"
-        self.animctrl2.name = "Target"
-        self.fimctrl.name = "Generated"
-        self.linctrl.name = "Linear"
+        self.animctrl1.name = "Base\nMotion"
+        self.animctrl2.name = "Target\nMotion"
+        self.fimctrl.name = "Neural\nTransition"
+        self.linctrl.name = "Linear\nTransition"
         self.reposition_subcontrollers()
         
     def load_anim_file(self, filename:str, controller_index:int=0, update_plots:bool=False):
         if controller_index == 0:
             self.animctrl1.load_anim_file(filename, controller_index=controller_index, update_plots=True)
             self.fimctrl.preprocess_base()
+            self.fimctrl.reset_linear_transition(self.linctrl)
             self.nnutty.plotUpdated.emit(2)
         else:
             self.animctrl2.load_anim_file(filename, controller_index=controller_index, update_plots=True)
@@ -69,6 +70,9 @@ class FairmotionInterpolativeController(FairmotionMultiController):
     
     def get_plot_data(self, index, no_cache=False):
         return self.ctrls[[0, 2, 1, 3][index]].get_plot_data(no_cache=index==2)
+    
+    def get_ground_point(self, pose):
+        return self.fimctrl.get_ground_point(pose)
 
 class FairmotionInterpolativeModelController(FairmotionModelController):
     def __init__(self, nnutty,  model_path:str = None, 
@@ -141,11 +145,16 @@ class FairmotionInterpolativeModelController(FairmotionModelController):
         self.generated_plot_needs_update = True
         if self.queue_secondary_loading:
             self.preprocess_secondary()
-            self.queue_secondary_loading = False
+            self.queue_secondary_loading = False    
 
     def load_model(self, model_path:str, recompute:bool=False):
         self.generated_plot_needs_update = True
         super().load_model(model_path, recompute)
+
+    def reset_linear_transition(self, linctrl):
+        if linctrl.motion is not None:
+            linctrl.motion.clear()
+            linctrl.digest_motion(self.computed_poses, append=True)
 
     def generate_linear_transition(self, linctrl):
         if linctrl.motion is None:
@@ -155,7 +164,7 @@ class FairmotionInterpolativeModelController(FairmotionModelController):
         self.lin_tgt = self.anim_file_ctrl2.motion.rotations()[self.transition_to_frame:]
         lin_res = np.zeros((self.transition_frame + len(self.lin_tgt) ,*self.lin_src.shape[1:]))
         lin_res[:self.transition_frame] = self.lin_src[:self.transition_frame]
-        transition_frames = min(self.lin_transition_frames, len(self.lin_tgt))
+        transition_frames = min(self.lin_transition_frames, len(self.lin_tgt), len(self.lin_src) - self.transition_frame)
         for i in range(transition_frames):
             fade = i / transition_frames
             dst_frame = self.transition_frame + i

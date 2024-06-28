@@ -97,15 +97,22 @@ class NNuttyViewer(glut_viewer.Viewer):
 
     def _render_pose(self, pose, controller, character, color):
         skel = pose.skel
+        ground_point = controller.get_ground_point(pose)
+        #ground_point[0] = 0
+        #ground_point[2] = 0
         for j in skel.joints:
             T = pose.get_transform(j, local=False)
-            pos = conversions.T2p(T)*controller.settings.scale
+            pos = conversions.T2p(T)
+            pos = pos - ground_point
+            pos *=controller.settings.scale
             gl_render.render_point(pos + controller.settings.world_offset, radius=0.03 * self.thickness, color=color)
             if j.parent_joint is not None:
                 # returns X that X dot vec1 = vec2
                 pos_parent = conversions.T2p(
                     pose.get_transform(j.parent_joint, local=False)
-                )*controller.settings.scale
+                )
+                pos_parent = pos_parent - ground_point
+                pos_parent *= controller.settings.scale
                 p = 0.5 * (pos_parent + pos) + controller.settings.world_offset
                 #p *= controller.settings.scale
                 if controller != character.controller:
@@ -203,6 +210,8 @@ class NNuttyViewer(glut_viewer.Viewer):
                     controllers = character.controller.get_controllers()
                 
                 for ctrl in controllers:
+                    if not ctrl in self.controller_2d_coords:
+                        continue
                     pos = self.controller_2d_coords[ctrl]
                     pos[1] = 0.15*h
                     gl_render.render_text(
