@@ -158,7 +158,7 @@ class FairmotionModelController(UncachedAnimController):
             model_folder = model_path.parent
 
         if model_path in self.model_cache:
-            self.model = self.model_cache[model_path]
+            self.model, self.model_mean, self.model_std, self.representation, self.interpolative, self.num_dim, self.current_model_path, self.model_name = self.model_cache[model_path]
             self.current_model_path = model_path
             logging.info(f"Model loaded into '{self.device}'.")
             if recompute:
@@ -203,7 +203,7 @@ class FairmotionModelController(UncachedAnimController):
         )
         self.model.load_state_dict(torch.load(model_path, map_location=self.device))
         self.model.eval()
-        self.model_cache[model_path] = self.model
+        self.model_cache[model_path] = [self.model, self.model_mean, self.model_std, self.representation, self.interpolative, self.num_dim, self.current_model_path, self.model_name]
         self.current_model_path = model_path
         logging.info(f"Model loaded into '{self.device}'.")
 
