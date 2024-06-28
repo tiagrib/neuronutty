@@ -21,8 +21,10 @@ class MultiAnimController(CharacterController):
             ctrl.reset()
 
     def advance_time(self, dt, params=None):
-        for ctrl in self.ctrls:
-            ctrl.advance_time(dt=dt, params=params)
+        all_ending = all(ctrl.is_ending(dt) for ctrl in self.ctrls if ctrl.is_ending(dt) is not None)
+        for i, ctrl in enumerate(self.ctrls):
+            if not(ctrl.is_ending(dt) and not all_ending):
+                ctrl.advance_time(dt=dt, params=params)
 
     def compute(self, dt=None, params=None):
         for ctrl in self.ctrls:

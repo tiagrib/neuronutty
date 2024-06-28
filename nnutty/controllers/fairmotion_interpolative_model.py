@@ -2,6 +2,7 @@
 
 import numpy as np
 from nnutty.controllers.anim_file_controller import AnimFileController
+from nnutty.controllers.cached_anim_controller import CachedAnimController
 from nnutty.controllers.character_controller import CharacterSettings
 from nnutty.controllers.fairmotion_torch_model_controller import FairmotionModelController, FairmotionMultiController
 import torch
@@ -27,6 +28,7 @@ class FairmotionInterpolativeController(FairmotionMultiController):
                                                               animctrl=self.animctrl1,
                                                               animctrl2=self.animctrl2,
                                                               parent=self)
+        self.linctrl = CachedAnimController(nnutty, settings=CharacterSettings.copy(settings), parent=self)
         super().__init__(nnutty,
                          model_path=model_path,
                          settings=settings,
@@ -35,21 +37,22 @@ class FairmotionInterpolativeController(FairmotionMultiController):
                          animctrl=self.animctrl1,
                          )
         self.ctrls.append(self.animctrl2)
+        self.ctrls.append(self.linctrl)
         self.reposition_subcontrollers()
         
     def load_anim_file(self, filename:str, controller_index:int=0, update_plots:bool=False):
         if controller_index == 0:
             self.animctrl1.load_anim_file(filename, controller_index=controller_index, update_plots=True)
             self.fimctrl.preprocess_base()
-            self.reset()
             self.nnutty.plotUpdated.emit(2)
         else:
             self.animctrl2.load_anim_file(filename, controller_index=controller_index, update_plots=True)
             self.fimctrl.preprocess_secondary()
+        self.reset()
 
     def trigger_secondary(self):
         print("SECONDARY")
-        self.fimctrl.trigger_transition()
+        self.fimctrl.trigger_transition(self.linctrl)
 
     def load_model(self, model_path:str):
         self.fimctrl.load_model(model_path, recompute=False)
@@ -61,7 +64,7 @@ class FairmotionInterpolativeController(FairmotionMultiController):
         return self.fimctrl.get_cur_time()
     
     def get_plot_data(self, index, no_cache=False):
-        return self.ctrls[[0, 2, 1][index]].get_plot_data(no_cache=index==2)
+        return self.ctrls[[0, 2, 3, 3][index]].get_plot_data(no_cache=index==2)
 
 class FairmotionInterpolativeModelController(FairmotionModelController):
     def __init__(self, nnutty,  model_path:str = None, 
@@ -139,12 +142,33 @@ class FairmotionInterpolativeModelController(FairmotionModelController):
         self.generated_plot_needs_update = True
         super().load_model(model_path, recompute)
 
-    def trigger_transition(self):
+    def generate_linear_transition(self, linctrl):
+        if linctrl.motion is None:
+            linctrl.create_motion(self.anim_file_ctrl.motion.skel, self.anim_file_ctrl.fps)
+        self.lin_transition_frames = 30
+        self.lin_src = self.anim_file_ctrl.motion.rotations()
+        self.lin_tgt = self.anim_file_ctrl2.motion.rotations()[self.transition_to_frame:]
+        lin_res = np.zeros((self.transition_frame + len(self.lin_tgt) ,*self.lin_src.shape[1:]))
+        lin_res[:self.transition_frame] = self.lin_src[:self.transition_frame]
+        transition_frames = min(self.lin_transition_frames, len(self.lin_tgt))
+        for i in range(transition_frames):
+            fade = i / transition_frames
+            dst_frame = self.transition_frame + i
+            lin_res[dst_frame] = motion_math.lerp(self.lin_src[dst_frame], self.lin_tgt[i], fade)
+        if transition_frames <= self.lin_transition_frames:
+            lin_res[self.transition_frame + transition_frames:] = self.lin_tgt[transition_frames:]
+        linctrl.digest_motion(lin_res)
+        linctrl.cur_time = self.transition_frame / self.anim_file_ctrl.fps
+
+
+    def trigger_transition(self, linctrl):
         if self.preprocessed_secondary_motion is None:
             print("Secondary motion not preprocessed")
             return
         self.transition_frame = self.anim_file_ctrl.motion.time_to_frame(self.anim_file_ctrl.cur_time)
         self.transition_to_frame = self.anim_file_ctrl2.motion.time_to_frame(self.anim_file_ctrl2.cur_time)
+
+        self.generate_linear_transition(linctrl)
         
         self.computed_poses = self.anim_file_ctrl.motion.poses[:self.transition_frame]
         self.computed_poses.extend(self.anim_file_ctrl2.motion.poses[self.transition_to_frame:])
@@ -163,6 +187,9 @@ class FairmotionInterpolativeModelController(FairmotionModelController):
         self.tgt_start = self.transition_frame + 1
         self.transition_fade_frames = 15
         self.generated_plot_needs_update = True
+
+    def is_ending(self, dt):
+        return self.cur_time + dt > self.total_time
 
     def advance_time(self, dt, params=None):
         if self.computed_poses:

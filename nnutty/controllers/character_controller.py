@@ -121,3 +121,6 @@ class CharacterController():
     def get_color(self):
         return self.settings.color
     
+    def is_ending(self, dt):
+        return None
+    

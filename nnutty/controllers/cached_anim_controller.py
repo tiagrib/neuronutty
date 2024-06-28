@@ -21,17 +21,32 @@ class CachedAnimController(CharacterController):
     def digest_fairmotion(self, motion):
         self.digest_motion(motion)
 
-    def digest_motion(self, motion, append=False):
-        if not append:
+    def create_motion(self, skel, fps):
+        self.motion = Motion(skel=skel, fps=fps)
+
+    def digest_motion(self, motion, append=False, skel=None, fps=None):
+        if not append and isinstance(motion, Motion):
             self.motion = motion
         else:
             if isinstance(motion, Motion):
-                for i in range(motion.num_frames()):
-                    self.motion.add_one_frame(motion.get_pose_by_frame(i))
+                if self.motion is None:
+                    self.motion = motion
+                else:
+                    for i in range(motion.num_frames()):
+                        self.motion.add_one_frame(motion.get_pose_by_frame(i))
             else:
-                # shape is (1, num_frames, num_inputs = 3 * num_joints)
-                frames = motion[0].reshape(motion[0].shape[0], 24, 3)
-                frames = conversions.A2T(frames)
+                assert(not(self.motion is None) and (skel is None or fps is not None))
+                if self.motion is None:
+                    self.motion = Motion(skel=self.motion.skel, fps=self.motion.fps)
+                else:
+                    self.motion.clear()
+                    
+                # shape is (num_frames, num_inputs = 3 * num_joints)
+                if motion.shape[-1] != 3 and motion.shape[-2] != 3:
+                    frames = motion.reshape(motion[0].shape[0], 24, 3)
+                    frames = conversions.A2T(frames)
+                else:
+                    frames = conversions.R2T(motion)
                 for i in range(len(frames)):
                     self.motion.add_one_frame(frames[i])
         self.end_time = self.motion.length()
@@ -46,8 +61,11 @@ class CachedAnimController(CharacterController):
         if self.cur_time > self.end_time:
             self.reset()
 
+    def is_ending(self, dt):
+        return self.cur_time + dt > self.end_time
+
     def get_pose(self):
-        if self.motion is None:
+        if self.motion is None or self.motion.num_frames() == 0:
             return None
         pose = self.motion.get_pose_by_time(self.cur_time)
         return pose
