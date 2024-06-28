@@ -37,6 +37,7 @@ class AnimFileController(CachedAnimController):
         self.plot_data_cache = {}
         self.filename = None
         self.load_anim_file(filename)
+        self.name = "AnimFile"
 
     def load_anim_file(self, filename:str, controller_index:int=0, update_plots:bool=False):
         if filename in self.caches:

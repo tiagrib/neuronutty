@@ -43,6 +43,7 @@ class NNuttyViewer(glut_viewer.Viewer):
             vup=self.v_up,
             fov=45.0,
         )
+        self.controller_2d_coords = {}
         super().__init__(title="NeuroNutty Viewer",
                          size=(1280, 720),
                          cam=self.cam)
@@ -127,6 +128,7 @@ class NNuttyViewer(glut_viewer.Viewer):
             np.array([255, 255, 0, 255]) / 255.0,  # yellow
             np.array([85, 160, 173, 255]) / 255.0,  # blue
         ]
+        self.controller_2d_coords.clear()
         for i, character in self.nnutty.get_characters():
             
             if character.controller.settings.show_origin:
@@ -137,11 +139,14 @@ class NNuttyViewer(glut_viewer.Viewer):
             poses = character.get_pose()
             colors = character.get_color()
             if character.controller.ctrl_type in [CharCtrlType.MULTI]:
-                controllers = character.controller.get_controllers()    
+                controllers = character.controller.get_controllers()
             else:
                 poses = [character.get_pose()]
                 colors = [character.get_color()]
                 controllers = [character.controller]
+
+            for ctrl in controllers:
+                self.controller_2d_coords[ctrl] = gl_render.translateGLToWindowCoordinates(ctrl.settings.world_offset)
             
             if poses and poses[0]:
                 glEnable(GL_LIGHTING)
@@ -186,11 +191,26 @@ class NNuttyViewer(glut_viewer.Viewer):
 
             for i, character in self.nnutty.get_characters():
                 ctrl_type = character.controller.ctrl_type
+
                 gl_render.render_text(
                     f"Character #{i}: {ctrl_type.name}; t={character.controller.get_cur_time():.2f}",
                     pos=[0.05 * w, 0.90 * h - 5*i],
                     font=GLUT_BITMAP_TIMES_ROMAN_24,
                 )
+
+                controllers = [character.controller]
+                if character.controller.ctrl_type in [CharCtrlType.MULTI]:
+                    controllers = character.controller.get_controllers()
+                
+                for ctrl in controllers:
+                    pos = self.controller_2d_coords[ctrl]
+                    pos[1] = 0.15*h
+                    gl_render.render_text(
+                        f"{ctrl.name}",
+                        pos=pos,
+                        color=[0.8, 0.6, 0.2, 1.0],
+                        font=GLUT_BITMAP_TIMES_ROMAN_24,
+                    )
 
     def record_callback(self):
         if self.recording:

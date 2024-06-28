@@ -38,6 +38,10 @@ class FairmotionInterpolativeController(FairmotionMultiController):
                          )
         self.ctrls.append(self.animctrl2)
         self.ctrls.append(self.linctrl)
+        self.animctrl1.name = "Base"
+        self.animctrl2.name = "Target"
+        self.fimctrl.name = "Generated"
+        self.linctrl.name = "Linear"
         self.reposition_subcontrollers()
         
     def load_anim_file(self, filename:str, controller_index:int=0, update_plots:bool=False):
@@ -64,7 +68,7 @@ class FairmotionInterpolativeController(FairmotionMultiController):
         return self.fimctrl.get_cur_time()
     
     def get_plot_data(self, index, no_cache=False):
-        return self.ctrls[[0, 2, 3, 3][index]].get_plot_data(no_cache=index==2)
+        return self.ctrls[[0, 2, 1, 3][index]].get_plot_data(no_cache=index==2)
 
 class FairmotionInterpolativeModelController(FairmotionModelController):
     def __init__(self, nnutty,  model_path:str = None, 
@@ -88,6 +92,7 @@ class FairmotionInterpolativeModelController(FairmotionModelController):
         self.src_start = 0
         self.tgt_start = 0
         self.generated_plot_needs_update = True
+        self.name = "FIM"
     
     def preprocess_secondary(self):
         if self.model is None:

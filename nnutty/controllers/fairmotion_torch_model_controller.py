@@ -122,6 +122,7 @@ class FairmotionModelController(UncachedAnimController):
         self.plot_data_cache = {}
         self.current_model_path = None
         self.num_predictions = 0
+        self.name = "FM"
         if self.anim_file_ctrl is None:
             self.anim_file_ctrl = AnimFileController(settings=self.settings)
         else:

@@ -45,6 +45,17 @@ COLOR_SEQUENCE = [
     [0, 1, 1, 0.5],
 ]
 
+# https://community.khronos.org/t/placing-text-in-3d-world/59313/3
+def translateGLToWindowCoordinates(pos3d):
+    modelview = glGetDoublev(GL_MODELVIEW_MATRIX)
+    projection = glGetDoublev(GL_PROJECTION_MATRIX)
+    viewport = glGetIntegerv(GL_VIEWPORT)
+    
+    out_x, out_y, out_z,  = gluProject(pos3d[0], pos3d[1], pos3d[2], modelview, projection, viewport, )
+    out_y = viewport[3] - out_y
+
+    return [out_x, out_y]
+
 
 def glTransform(T):
     glMultMatrixd(T.transpose().ravel())
@@ -635,7 +646,6 @@ def render_quad_2D(p1, p2, p3, p4, color=[0, 0, 0, 1]):
     glVertex2d(p3[0], p3[1])
     glVertex2d(p4[0], p4[1])
     glEnd()
-
 
 def render_text(
     text, pos, font=GLUT_BITMAP_TIMES_ROMAN_10, color=[0, 0, 0, 1]

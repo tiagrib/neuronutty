@@ -89,6 +89,7 @@ class CharacterController():
         self.nnutty = nnutty
         self.ctrl_type = ctrl_type
         self.parent = parent
+        self.name = "CharCtrl"
         if settings is None:
             self.settings = CharacterSettings()
         else:

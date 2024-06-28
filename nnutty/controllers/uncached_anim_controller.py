@@ -11,6 +11,7 @@ class UncachedAnimController(CharacterController):
         self.end_time = 0.0
         self.fps = 1.0
         self.pose = None
+        self.name = "UncachedAnim"
 
     def reset(self):
         self.cur_time = 0.0

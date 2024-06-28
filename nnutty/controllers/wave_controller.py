@@ -29,6 +29,7 @@ class WaveAnimController(UncachedAnimController):
         self.global_range_max = 90
         self.rot_axes = None
         self.clear_skeleton()
+        self.name = "WaveAnim"
 
     def CreateLinearSkeleton(self, rot_axes=None, last_joint_name=None):
         if len(self.joints) == 0 or len(self.segment_offset) == 0:

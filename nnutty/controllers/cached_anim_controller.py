@@ -14,6 +14,7 @@ class CachedAnimController(CharacterController):
         self.end_time = 0.0
         self.fps = 1.0
         self.motion = None
+        self.name = "CachedAnim"
 
     def loads_animations(self):
         return 1
