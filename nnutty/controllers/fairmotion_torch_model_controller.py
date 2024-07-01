@@ -20,6 +20,9 @@ from thirdparty.fairmotion.tasks.motion_prediction.dataset import FORCE_DATA_TO_
 import time
 
 
+ACTIVE_COLOR = np.array([173, 130, 50, 255]) / 255.0
+INACTIVE_COLOR = np.array([85, 160, 173, 255]) / 255.0
+
 
 class FairmotionMultiController(MultiAnimController):
     def __init__(self, nnutty, 
@@ -244,14 +247,16 @@ class FairmotionModelController(UncachedAnimController):
             res = res.double()
         return res
 
-    def normalized_motion_data_to_rotations(self, output):
+    def normalized_motion_data_to_rotations(self, output, return_t_and_aa=False):
         output = utils.unnormalize(np.array(output), self.model_mean[:self.num_dim], self.model_std[:self.num_dim])
-        output = utils.unflatten_angles(output, self.representation)
+        output_aa = utils.unflatten_angles(output, self.representation)
         if self.representation == "aa":
-            output = conversions.A2R(output)
-        output = np.array(output)
-        output = conversions.R2T(output)
-        return output
+            output_r = conversions.A2R(output_aa)
+        output_r = np.array(output_r)
+        output_t = conversions.R2T(output_r)
+        if return_t_and_aa:
+            return output_t.squeeze(), output_aa.squeeze()
+        return output_t.squeeze()
 
     def recompute_prediction(self):
         if self.model is None or self.anim_file_ctrl.motion is None:
@@ -352,12 +357,12 @@ class FairmotionModelController(UncachedAnimController):
             if self.cur_time > self.reference_anim_length:
                 if not self.in_prediction:
                     logging.info("Displaying prediction")
-                    self.settings.color = np.array([173, 130, 50, 255]) / 255.0  # orange-red
+                    self.settings.color = ACTIVE_COLOR
                 self.in_prediction = True
             else:
                 if self.in_prediction:
                     logging.info("Displaying original animation")
-                    self.settings.color = np.array([85, 160, 173, 255]) / 255.0  # blue
+                    self.settings.color = INACTIVE_COLOR
                 self.in_prediction = False
             self.compute(dt, params)
     

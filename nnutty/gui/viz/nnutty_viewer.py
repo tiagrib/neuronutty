@@ -95,12 +95,16 @@ class NNuttyViewer(glut_viewer.Viewer):
             return False
         return True
 
-    def _render_pose(self, pose, controller, character, color):
+    def _render_pose(self, pose, controller, character, colors):
         skel = pose.skel
         ground_point = controller.get_ground_point(pose)
         #ground_point[0] = 0
         #ground_point[2] = 0
-        for j in skel.joints:
+        for i, j in enumerate(skel.joints):
+            if isinstance(colors, list) or (isinstance(colors, np.ndarray) and len(colors.shape)>1):
+                color = colors[i]
+            else:
+                color = colors
             T = pose.get_transform(j, local=False)
             pos = conversions.T2p(T)
             pos = pos - ground_point
@@ -130,7 +134,7 @@ class NNuttyViewer(glut_viewer.Viewer):
                 )
 
     def _render_characters(self):
-        colors = [
+        default_colors = [
             np.array([123, 174, 85, 255]) / 255.0,  # green
             np.array([255, 255, 0, 255]) / 255.0,  # yellow
             np.array([85, 160, 173, 255]) / 255.0,  # blue
@@ -143,30 +147,25 @@ class NNuttyViewer(glut_viewer.Viewer):
                                            use_arrow=True, line_width=self.nnutty.args.thickness)
 
             controllers = character.controller
-            poses = character.get_pose()
-            colors = character.get_color()
+            ctrl_poses = character.get_pose()
+            ctrl_colors = character.get_color()
             if character.controller.ctrl_type in [CharCtrlType.MULTI]:
                 controllers = character.controller.get_controllers()
             else:
-                poses = [character.get_pose()]
-                colors = [character.get_color()]
-                controllers = [character.controller]
+                ctrl_poses = [ctrl_poses]
+                ctrl_colors = [ctrl_colors]
+                controllers = [controllers]
+            ctrl_colors = [c if c is not None else default_colors[i % len(default_colors)] for i, c in enumerate(ctrl_colors)]
 
-            for ctrl in controllers:
-                self.controller_2d_coords[ctrl] = gl_render.translateGLToWindowCoordinates(ctrl.settings.world_offset)
-            
-            if poses and poses[0]:
-                glEnable(GL_LIGHTING)
-                glEnable(GL_DEPTH_TEST)
-                glEnable(GL_LIGHTING)
-                
-                for i, pose in enumerate(poses):
-                    if pose:
-                        color = colors[i]
-                        if color is None:
-                            color = colors[i % len(colors)]
-                        
-                        self._render_pose(pose, controllers[i], character, color)
+            glEnable(GL_LIGHTING)
+            glEnable(GL_DEPTH_TEST)
+            glEnable(GL_LIGHTING)
+
+            num_ctrls = len(controllers)
+            for i in range(len(controllers)):
+                if ctrl_poses[i] is not None:
+                    self.controller_2d_coords[controllers[i]] = gl_render.translateGLToWindowCoordinates(controllers[i].settings.world_offset)
+                    self._render_pose(ctrl_poses[i], controllers[i], character, ctrl_colors[i])
 
     def render_callback(self):
         gl_render.render_ground(

@@ -310,6 +310,16 @@ class NNutty(QtCore.QObject):
     def trigger_secondary_animation(self):
         if (self.selected_character_invalid(FairmotionInterpolativeController)): return
         self.get_first_controller().trigger_secondary()
+
+    @QtCore.Slot(float)
+    def set_fim_fade_in_max_frames(self, value):
+        if (self.selected_character_invalid(FairmotionInterpolativeController)): return
+        self.get_first_controller().set_fade_in_max_frames(int(value))
+
+    @QtCore.Slot(float)
+    def set_fim_match_threshold(self, value):
+        if (self.selected_character_invalid(FairmotionInterpolativeController)): return
+        self.get_first_controller().set_match_threshold(value)
     
     def get_plot_data(self, index=0):
         if self.selected_character_invalid(): return
