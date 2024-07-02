@@ -247,12 +247,14 @@ class FairmotionModelController(UncachedAnimController):
             res = res.double()
         return res
 
-    def normalized_motion_data_to_rotations(self, output, return_t_and_aa=False):
-        output = utils.unnormalize(np.array(output), self.model_mean[:self.num_dim], self.model_std[:self.num_dim])
+    def normalized_motion_data_to_rotations(self, output, return_t_and_aa=False, return_aa_only=False):
+        output = utils.unnormalize(output, self.model_mean[:self.num_dim], self.model_std[:self.num_dim])
         output_aa = utils.unflatten_angles(output, self.representation)
+        if return_aa_only:
+            return output_aa.squeeze()
+        
         if self.representation == "aa":
             output_r = conversions.A2R(output_aa)
-        output_r = np.array(output_r)
         output_t = conversions.R2T(output_r)
         if return_t_and_aa:
             return output_t.squeeze(), output_aa.squeeze()
@@ -284,11 +286,10 @@ class FairmotionModelController(UncachedAnimController):
         writer.close()
         pred_seq = (
             generate.generate(self.model, input_motion, self.num_predictions, self.device)
-            .to(device="cpu")
-            .numpy()
+            
         )
 
-        computed_motion = self.preprocessed_motion.numpy(force=True)
+        computed_motion = self.preprocessed_motion.clone()
         computed_motion[:,self.num_ref_frames:] = pred_seq
         computed_motion = self.normalized_motion_data_to_rotations(computed_motion)
 

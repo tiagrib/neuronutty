@@ -106,8 +106,8 @@ class FairmotionInterpolativeModelController(FairmotionModelController):
         self.tgt_start = 0
         self.generated_plot_needs_update = True
         self.name = "FIM"
-        self.match_threshold = np.pi/45
-        self.transition_fade_frames = 15
+        self.match_threshold = 0.015
+        self.transition_fade_frames = 8
     
     def preprocess_secondary(self):
         if self.model is None:
@@ -144,11 +144,15 @@ class FairmotionInterpolativeModelController(FairmotionModelController):
         cached = self._get_cached(BASE_MOTION_CACHE)
         if cached is not None:
             print("Using cached preprocessed base motion")
-            self.preprocessed_motion = cached
+            self.preprocessed_motion, self.preprocessed_motion_aa = cached
         else:
             print("Preprocessing base animation")
-            self.preprocessed_motion = self.rotations_to_normalized_motion_data(self.anim_file_ctrl.motion.rotations())
-            self._add_cache(self.preprocessed_motion, BASE_MOTION_CACHE)
+            self.preprocessed_motion_aa = self.anim_file_ctrl.motion.rotations()
+            self.preprocessed_motion = self.rotations_to_normalized_motion_data(self.preprocessed_motion_aa)
+            self.preprocessed_motion_aa = conversions.R2A(self.preprocessed_motion_aa)
+            self._add_cache((self.preprocessed_motion, self.preprocessed_motion_aa), BASE_MOTION_CACHE)
+        
+        self.preprocessed_motion_aa = torch.tensor(self.preprocessed_motion_aa, device=self.device)
         self.computed_poses = self.anim_file_ctrl.motion.poses
         self.total_frames = len(self.computed_poses)
         self.total_time = self.total_frames / self.anim_file_ctrl.fps
@@ -197,13 +201,14 @@ class FairmotionInterpolativeModelController(FairmotionModelController):
 
         self.generate_linear_transition(linctrl, transition_frame)
         
-        self.match_vector = np.zeros(self.num_channels)
-        self.matched_channels = np.full(self.num_channels, True)
+        self.match_vector = torch.zeros(self.num_channels, device=self.device)
+        self.matched_channels = torch.full((self.num_channels,), True, device=self.device)
 
         self.computed_poses = self.anim_file_ctrl.motion.poses[:transition_frame]
         self.computed_poses.extend(self.anim_file_ctrl2.motion.poses[self.transition_to_frame:])
         self.target_poses_t = np.array([self.computed_poses[i].data for i in range(len(self.computed_poses))])
-        self.target_poses_aa = conversions.R2A(conversions.T2R(self.target_poses_t))
+        self.target_poses_aa = torch.tensor(conversions.R2A(conversions.T2R(self.target_poses_t)), device=self.device)
+        self.target_poses_t = torch.tensor(self.target_poses_t, device=self.device)
         
         self.total_frames = len(self.computed_poses)
         self.total_time = self.total_frames / self.anim_file_ctrl.fps
@@ -237,8 +242,9 @@ class FairmotionInterpolativeModelController(FairmotionModelController):
             self.interpolation_buffer = self.interpolation_buffer_untouched.clone()
 
     def compute_match_vector(self, src, tgt):
-        self.match_vector = np.absolute((tgt - src)).max(1) / np.pi
+        self.match_vector = torch.div(torch.absolute((tgt - src)).max(1).values, torch.pi)
         self.matched_channels = self.match_vector < self.match_threshold
+        self.matched_channels_cpu = self.matched_channels.to(device="cpu").numpy()
         self.match_vector[self.matched_channels] = 0.0
 
 
@@ -273,28 +279,36 @@ class FairmotionInterpolativeModelController(FairmotionModelController):
                 else:
                     # interpolate
                     self.settings.color = self._active_colors_base.copy()
-                    self.settings.color[self.matched_channels] = INACTIVE_COLOR
+                    self.settings.color[self.matched_channels_cpu] = INACTIVE_COLOR
                     src_motion = self.interpolation_buffer[:,self.src_start : self.src_start + self.src_len + self.tgt_len]
-                    src_motion = src_motion.reshape(1, int(src_motion.shape[1]/2), src_motion.shape[2]*2)
-                    gen_seq = generate.generate(self.model, src_motion, 1, self.device)[:,:,:self.num_dim]
+                    n_frames = int(src_motion.shape[1]/2)
+                    
+                    input = torch.zeros(src_motion.shape)
+                    input[0][::2] = src_motion[0][:n_frames]
+                    input[0][1::2] = src_motion[0][n_frames:]
+                    input = input.reshape(1, n_frames, input.shape[2]*2)
+                    gen_seq = generate.generate(self.model, input, 1, self.device)[:,:,:self.num_dim]
 
+                    gen_seq_aa = self.normalized_motion_data_to_rotations(gen_seq.to(device='cpu'), return_aa_only=True).to(device=self.device)
+
+                    self.compute_match_vector(gen_seq_aa, self.target_poses_aa[curr_frame])
+                    gen_seq_aa[~self.matched_channels] = motion_math.lerp(self.target_poses_aa[curr_frame][~self.matched_channels], gen_seq_aa[~self.matched_channels], self.match_vector[~self.matched_channels].unsqueeze(1))
+                    gen_seq_aa[self.matched_channels] = self.target_poses_aa[curr_frame][self.matched_channels]
 
                     fade_in_frame = self.src_start + self.src_len - self.transition_frame + 1
                     available_transition_frames = min(self.transition_fade_frames, self.preprocessed_motion.shape[1] - (self.src_start + self.src_len))
                     if fade_in_frame < available_transition_frames:
                         fade = fade_in_frame / available_transition_frames
-                        src_frame = self.preprocessed_motion[0][self.src_start+self.src_len]
-                        gen_seq = motion_math.lerp(src_frame, gen_seq, fade)
+                        src_frame = self.preprocessed_motion_aa[self.src_start+self.src_len]
+                        gen_seq_aa = motion_math.lerp(src_frame, gen_seq_aa, fade)
 
-                    self.interpolation_buffer[0][self.src_start + self.src_len] = gen_seq
                     
-                    gen_seq = gen_seq.to(device="cpu").numpy()
-                    gen_seq_t, gen_seq_aa = self.normalized_motion_data_to_rotations(gen_seq, return_t_and_aa=True)
-                    self.compute_match_vector(gen_seq_aa, self.target_poses_aa[curr_frame])
-                    gen_seq_t[self.matched_channels] = self.target_poses_t[curr_frame][self.matched_channels]
 
-                    self.interpolation_buffer[0][self.src_start + self.src_len] = self.rotations_to_normalized_motion_data(conversions.T2R(gen_seq_t)).squeeze()
-                    self.pose = Pose(self.anim_file_ctrl.motion.skel, gen_seq_t)
+                    gen_seq_aa = gen_seq_aa.to(device="cpu").numpy()
+                    gen_seq_r = conversions.A2R(gen_seq_aa)
+                    self.interpolation_buffer[0][self.src_start + self.src_len] = self.rotations_to_normalized_motion_data(gen_seq_r).squeeze()
+                    
+                    self.pose = Pose(self.anim_file_ctrl.motion.skel, conversions.R2T(gen_seq_r))
                     self.src_start += 1
                     
             except Exception as e:

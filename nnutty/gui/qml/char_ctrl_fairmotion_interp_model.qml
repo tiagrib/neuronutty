@@ -68,7 +68,7 @@ GroupBox {
                         from: 0
                         to: 30
                         stepSize: 1.0
-                        value: 15
+                        value: 8
                         onValueChanged: {
                             nnutty.set_fim_fade_in_max_frames(value)
                             fimf_valueLabel.text = "value: " + value
@@ -97,17 +97,17 @@ GroupBox {
 
                     Label {
                         id: mt_minLabel
-                        text: "pi/90"
+                        text: "0"
                     }
 
                     Slider {
                         id: matchThresholdSlider
                         Layout.fillWidth: true
                         Layout.preferredWidth: parent.width * 0.40
-                        from: 0.035
-                        to: 0.4
+                        from: 0.0
+                        to: 0.2
                         stepSize: 0.005
-                        value: 0.035
+                        value: 0.0
                         onValueChanged: {
                             nnutty.set_fim_match_threshold(value)
                             mt_valueLabel.text = "value: " + value
@@ -125,7 +125,7 @@ GroupBox {
 
                     Label {
                         id: mt_maxLabel
-                        text: "pi/8"
+                        text: "pi/16"
                     }
 
                 }
