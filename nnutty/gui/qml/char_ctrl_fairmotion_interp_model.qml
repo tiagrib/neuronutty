@@ -107,7 +107,7 @@ GroupBox {
                         from: 0.0
                         to: 0.2
                         stepSize: 0.005
-                        value: 0.0
+                        value: 0.015
                         onValueChanged: {
                             nnutty.set_fim_match_threshold(value)
                             mt_valueLabel.text = "value: " + value
