@@ -149,6 +149,7 @@ def make_parser():
 if __name__ == "__main__":
     # add thirdparty to sys.path
     sys.path.append(str(Path(__file__).resolve().parent / "thirdparty"))
+    sys.path.append(str(Path(__file__).resolve().parent / "thirdparty" / "CAT"))
     torch.set_default_dtype(torch.float32)
     torch.set_printoptions(sci_mode=False)
     args = make_parser()

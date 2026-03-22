@@ -95,11 +95,18 @@ class NNuttyViewer(glut_viewer.Viewer):
             return False
         return True
 
-    def _render_pose(self, pose, controller, character, colors):
+    def _render_pose(self, pose, controller_index, controller, character, colors):
         skel = pose.skel
         ground_point = controller.get_ground_point(pose)
         #ground_point[0] = 0
         #ground_point[2] = 0
+        if character.controller.settings.overlay_controllers:
+            if character.controller.settings.overlay_group is None or controller_index in character.controller.settings.overlay_group:
+                world_offset = character.controller.settings.world_offset
+            else:
+                world_offset = controller.settings.world_offset
+        else:
+            world_offset = controller.settings.world_offset
         for i, j in enumerate(skel.joints):
             if isinstance(colors, list) or (isinstance(colors, np.ndarray) and len(colors.shape)>1):
                 color = colors[i]
@@ -108,8 +115,8 @@ class NNuttyViewer(glut_viewer.Viewer):
             T = pose.get_transform(j, local=False)
             pos = conversions.T2p(T)
             pos = pos - ground_point
-            pos *=controller.settings.scale
-            gl_render.render_point(pos + controller.settings.world_offset, radius=0.03 * self.thickness, color=color)
+            pos *= controller.settings.scale
+            gl_render.render_point(pos + world_offset, radius=0.03 * self.thickness*10, color=color)
             if j.parent_joint is not None:
                 # returns X that X dot vec1 = vec2
                 pos_parent = conversions.T2p(
@@ -117,7 +124,7 @@ class NNuttyViewer(glut_viewer.Viewer):
                 )
                 pos_parent = pos_parent - ground_point
                 pos_parent *= controller.settings.scale
-                p = 0.5 * (pos_parent + pos) + controller.settings.world_offset
+                p = 0.5 * (pos_parent + pos) + world_offset
                 #p *= controller.settings.scale
                 if controller != character.controller:
                     p += character.controller.settings.world_offset
@@ -165,7 +172,7 @@ class NNuttyViewer(glut_viewer.Viewer):
             for i in range(len(controllers)):
                 if ctrl_poses[i] is not None:
                     self.controller_2d_coords[controllers[i]] = gl_render.translateGLToWindowCoordinates(controllers[i].settings.world_offset)
-                    self._render_pose(ctrl_poses[i], controllers[i], character, ctrl_colors[i])
+                    self._render_pose(ctrl_poses[i], i, controllers[i], character, ctrl_colors[i])
 
     def render_callback(self):
         gl_render.render_ground(

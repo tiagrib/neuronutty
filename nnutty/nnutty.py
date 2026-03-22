@@ -208,6 +208,17 @@ class NNutty(QtCore.QObject):
     def get_ground_character_feet(self):
         if self.selected_character_invalid(): return False
         return self.get_first_controller().settings.ground_feet
+    
+    @QtCore.Slot(bool)
+    def set_overlay_controllers(self, value):
+        if self.selected_character_invalid(): return
+        logging.info(f"set_overlay_controllers: {value}")
+        self.get_first_controller().settings.overlay_controllers = value
+
+    @QtCore.Slot(result=bool)
+    def get_overlay_controllers(self):
+        if self.selected_character_invalid(): return False
+        return self.get_first_controller().settings.overlay_controllers
 
     @QtCore.Slot(result=str)
     def get_selected_character_controller_name(self):

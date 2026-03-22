@@ -1,0 +1,3 @@
+[submodule "thirdparty/CAT"]
+	path = thirdparty/CAT
+	url = https://github.com/KosukeFukazawa/CharacterAnimationTools.git

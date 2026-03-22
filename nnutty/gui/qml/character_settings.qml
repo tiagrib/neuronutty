@@ -38,6 +38,12 @@ GroupBox {
             text: "Ground feet"
             checked: nnutty.get_ground_character_feet()
         }
+        Switch {
+            id: switchOverlayControllers
+            onCheckedChanged: nnutty.set_overlay_controllers(checked)
+            text: "Overlay Controllers"
+            checked: nnutty.get_overlay_controllers()
+        }
         Label { text: "World Position" }
         Row {
             Layout.fillWidth: true

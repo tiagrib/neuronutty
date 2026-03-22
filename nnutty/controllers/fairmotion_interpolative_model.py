@@ -42,6 +42,7 @@ class FairmotionInterpolativeController(FairmotionMultiController):
         self.animctrl2.name = "Target\nMotion"
         self.fimctrl.name = "Neural\nTransition"
         self.linctrl.name = "Linear\nTransition"
+        self.settings.overlay_group = [2, 3]
         self.reposition_subcontrollers()
         
     def load_anim_file(self, filename:str, controller_index:int=0, update_plots:bool=False):

@@ -60,6 +60,9 @@ class CharacterSettings():
         self.world_offset = [0.0, 0.0, 0.0]
         self.show_origin = True
         self.ground_feet = False
+        self.overlay_controllers = False
+        self.overlay_group = None
+        self.overlay_over = None
         self.color = np.array([85, 160, 173, 255]) / 255.0  # blue
 
     @classmethod
@@ -72,6 +75,10 @@ class CharacterSettings():
         new_settings.show_origin = existing.show_origin
         new_settings.color = existing.color.copy()
         new_settings.ground_feet = existing.ground_feet
+        new_settings.overlay_controllers = existing.overlay_controllers
+        new_settings.overlay_group = existing.overlay_group
+        new_settings.overlay_over = existing.overlay_over
+        
         return new_settings
 
     def set_world_offset(self, offset):
@@ -82,9 +89,6 @@ class CharacterSettings():
 
     def set_scale(self, scale):
         self.scale = scale
-
-    def set_ground_feet(self, ground_feet):
-        self.ground_feet = ground_feet
 
 class CharacterController():
     def __init__(self, 

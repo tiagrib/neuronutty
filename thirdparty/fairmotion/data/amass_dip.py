@@ -144,22 +144,33 @@ def load(
                 data = np.load(f, encoding="latin1")
             else:
                 data = pkl.load(f, encoding="latin1")
-            poses = np.array(data["poses"])  # shape (seq_length, 135)
-            assert len(poses) > 0, "file is empty"
-            poses = poses.reshape((-1, len(SMPL_MAJOR_JOINTS), 3, 3))
+            if isinstance(data, np.lib.npyio.NpzFile):
+                # load using CAT
+                import sys
+                print(sys.path)
+                from anim import amass
+                anim: Animation = amass.load(
+                    amass_motion_path="data/amass/**.npz",
+                    smplh_path="data/smplh/neutral/model.npz"
+                )
+                pass
+            else:
+                poses = np.array(data["poses"])  # shape (seq_length, 135)
+                assert len(poses) > 0, "file is empty"
+                poses = poses.reshape((-1, len(SMPL_MAJOR_JOINTS), 3, 3))
 
-            for pose_id, pose in enumerate(poses):
-                pose_data = [
-                    constants.eye_T() for _ in range(len(SMPL_JOINTS))
-                ]
-                major_joint_id = 0
-                for joint_id, joint_name in enumerate(SMPL_JOINTS):
-                    if joint_id in SMPL_MAJOR_JOINTS:
-                        pose_data[
-                            motion.skel.get_index_joint(joint_name)
-                        ] = conversions.R2T(pose[major_joint_id])
-                        major_joint_id += 1
-                motion.add_one_frame(pose_data)
+                for pose_id, pose in enumerate(poses):
+                    pose_data = [
+                        constants.eye_T() for _ in range(len(SMPL_JOINTS))
+                    ]
+                    major_joint_id = 0
+                    for joint_id, joint_name in enumerate(SMPL_JOINTS):
+                        if joint_id in SMPL_MAJOR_JOINTS:
+                            pose_data[
+                                motion.skel.get_index_joint(joint_name)
+                            ] = conversions.R2T(pose[major_joint_id])
+                            major_joint_id += 1
+                    motion.add_one_frame(pose_data)
 
     return motion
 
